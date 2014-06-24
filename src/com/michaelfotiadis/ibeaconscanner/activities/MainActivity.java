@@ -179,8 +179,6 @@ public class MainActivity extends FragmentActivity {
 	public void onClickStartScanning(View view) {
 		Logger.d(TAG, "Click on Scan Button");
 		
-		new ScanProcess().cancelServiceAlarm(this);
-		
 		Logger.d(TAG, "Registering Response Receiver");
 		IntentFilter mIntentFilter = new IntentFilter(
 				CustomConstants.Broadcasts.BROADCAST_1.getString());

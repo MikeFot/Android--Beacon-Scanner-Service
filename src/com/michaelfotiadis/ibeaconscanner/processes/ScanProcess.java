@@ -29,6 +29,7 @@ public class ScanProcess {
 		Logger.d(TAG, "Scan Time : " + scanDurationTime);
 		Logger.d(TAG, "Gap Time : " + scanGapTime);
 		
+		this.cancelServiceAlarm(context);
 		
 		Singleton.getInstance().setNumberOfScans(0);
 		
