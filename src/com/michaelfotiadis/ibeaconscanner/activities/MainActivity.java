@@ -1,126 +1,179 @@
 package com.michaelfotiadis.ibeaconscanner.activities;
 
+import uk.co.alt236.bluetoothlelib.device.BluetoothLeDevice;
+import uk.co.alt236.bluetoothlelib.device.IBeaconDevice;
 import android.app.ActionBar;
-import android.app.Activity;
-import android.app.Fragment;
-import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.content.LocalBroadcastManager;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.github.johnpersano.supertoasts.SuperActivityToast;
 import com.michaelfotiadis.ibeaconscanner.R;
 import com.michaelfotiadis.ibeaconscanner.containers.CustomConstants;
+import com.michaelfotiadis.ibeaconscanner.datastore.Singleton;
 import com.michaelfotiadis.ibeaconscanner.processes.ScanProcess;
+import com.michaelfotiadis.ibeaconscanner.tasks.MonitorTask;
+import com.michaelfotiadis.ibeaconscanner.tasks.MonitorTask.OnBeaconDataChangedListener;
 import com.michaelfotiadis.ibeaconscanner.utils.BluetoothUtils;
 import com.michaelfotiadis.ibeaconscanner.utils.Logger;
+import com.michaelfotiadis.ibeaconscanner.utils.ToastUtils;
 
 public class MainActivity extends FragmentActivity {
+
+
+
+	public class ResponseReceiver extends BroadcastReceiver {
+		private String TAG = "Response Receiver";
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			Logger.d(TAG, "On Receiver Result");
+			if (intent.getAction().equalsIgnoreCase(
+					CustomConstants.Broadcasts.BROADCAST_1.getString())) {
+				Logger.i(TAG, "Scan Running");
+				SuperActivityToast.cancelAllSuperActivityToasts();
+				isScanRunning = true;
+				mSuperActivityToast = ToastUtils.makeProgressToast(MainActivity.this, mSuperActivityToast, mToastString1);
+				mButton.setText(getResources().getString(R.string.label_stop_scanning));
+			} else if (intent.getAction().equalsIgnoreCase(
+					CustomConstants.Broadcasts.BROADCAST_2.getString())) {
+				Logger.i(TAG, "Service Finished");
+				SuperActivityToast.cancelAllSuperActivityToasts();
+				ToastUtils.makeInfoToast(MainActivity.this, mToastString2);
+				mButton.setEnabled(true);
+			}
+		}
+	}
 
 	private final String TAG = this.toString();
 
 	private BluetoothUtils mBluetoothUtils;
 
 	private Button mButton;
-
 	/**
 	 * Used to store the last screen title. For use in {@link #restoreActionBar()}.
 	 */
 	private CharSequence mTitle;
 
 	private final int mScanTime = 5000;
+
 	// use Gap Time of -1 to disable repeated scanning
 	private final int mGapTime = 5000;
 
+	private TextView mTextView;
+	private CharSequence mTextViewContents;
+
+	private MonitorTask mMonitorTask;
+
+	// Receivers
 	private ResponseReceiver mScanReceiver;
-	
-	public class ResponseReceiver extends BroadcastReceiver {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			Logger.d(TAG, "On Receiver Result");
-			if (intent.getAction().equalsIgnoreCase(
-					CustomConstants.Broadcasts.BROADCAST_1.getString())) {
-				Logger.i(TAG, "Scan Started");
-				launchRingDialog();
-			} 
+
+
+	private boolean isScanRunning = false;
+
+	private SuperActivityToast mSuperActivityToast;
+
+	private final String mToastString1 = "Scanning...";
+	private final String mToastString2 = "Scan finished";
+	private final String mToastString3 = "Please enable bluetooth to continue...";
+	private final String mToastString4 = "Device does not support Bluetooth LE";
+	private final String mToastString5 = "Stopping Scan...";
+
+	private boolean mButtonState = true;
+
+	private void notifyTextViewDataChanged() {
+
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+
+				if (Singleton.getInstance().getAvailableDevicesList() != null) {
+					mTextView.setText("Number of Available Devices : " 
+							+ String.valueOf(Singleton.getInstance().getAvailableDevicesList().size()));
+
+					StringBuilder message;
+					for (BluetoothLeDevice device : Singleton.getInstance().getAvailableDevicesList().values()) {
+
+						IBeaconDevice iBeacon = new IBeaconDevice(device);
+						message = new StringBuilder();
+						message.append(CustomConstants.LINE_SEPARATOR);
+						message.append("ID : ");
+						message.append(iBeacon.getAddress());
+						message.append(" with Accuracy : ");
+						message.append(CustomConstants.df.format(iBeacon.getAccuracy()));
+						message.append(" m");
+						mTextView.append(message.toString());
+					}
+				}
+			}
+		});
+
+	}
+
+	public void onClickStartScanning(View view) {
+		Logger.d(TAG, "Click on Scan Button");
+		SuperActivityToast.cancelAllSuperActivityToasts();
+
+		if (isScanRunning) {
+			// Cancels the alarms if the scan is already running
+			mButton.setEnabled(false);
+			new ScanProcess().cancelServiceAlarm(this);
+			mSuperActivityToast = ToastUtils.makeProgressToast(this, mSuperActivityToast, mToastString5 );
+			mButton.setText(getResources().getString(R.string.label_start_scanning));
+			isScanRunning = false;
+		} else {
+			// This ScanProcess will also cancel all alarms on continuation
+			new ScanProcess().scanForIBeacons(MainActivity.this, mScanTime, mGapTime);
 		}
 	}
-	
-	protected void removeReceivers() {
-		try {
-			LocalBroadcastManager.getInstance(this).unregisterReceiver(
-					mScanReceiver);
-			Logger.d(TAG, "Receiver Unregistered Successfully");
-		} catch (Exception e) {
-			Logger.d(
-					TAG,
-					"Receiver Already Unregistered. Exception : "
-							+ e.getLocalizedMessage());
-		}
-	}
-	
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.fragment_main);
 
-		mTitle = getTitle();
-		Logger.d(TAG, "Starting Application");
+		Logger.d(TAG, "Starting Main Activity");
+
+		mTextView = (TextView) findViewById(R.id.textViewReportScanResults);
+
+		if (savedInstanceState != null) {
+			mTextViewContents = savedInstanceState.getCharSequence(CustomConstants.Payloads.PAYLOAD_1.toString());
+			isScanRunning = savedInstanceState.getBoolean(CustomConstants.Payloads.PAYLOAD_2.toString(), false);
+			mButtonState = savedInstanceState.getBoolean(CustomConstants.Payloads.PAYLOAD_3.toString(), true);
+		}
 
 		mButton = (Button) findViewById(R.id.buttonStartScanningMain);
 		mButton.setEnabled(false);
 
 		mBluetoothUtils = new BluetoothUtils(this);
-		mBluetoothUtils.askUserToEnableBluetoothIfNeeded();
+
+		// monitor the singleton
+		registerMonitorTask();
+
+		// Wait for broadcasts from the scanning process
+		registerResponseReceiver();
+		SuperActivityToast.cancelAllSuperActivityToasts();
 	}
-
-	@Override
-	protected void onResume() {
-		super.onResume();
-
-		if (mBluetoothUtils.isBluetoothOn()
-				&& mBluetoothUtils.isBluetoothLeSupported()) {
-			Logger.i(TAG, "Bluetooth has been activated");
-			mButton.setEnabled(true);
-		}
-	}
-
-	public void onSectionAttached(int number) {
-		switch (number) {
-		case 1:
-			mTitle = getString(R.string.title_section1);
-			break;
-		case 2:
-			mTitle = getString(R.string.title_section2);
-			break;
-		case 3:
-			mTitle = getString(R.string.title_section3);
-			break;
-		}
-	}
-
-	public void restoreActionBar() {
-		ActionBar actionBar = getActionBar();
-		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
-		actionBar.setDisplayShowTitleEnabled(true);
-		actionBar.setTitle(mTitle);
-	}
-
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		return super.onCreateOptionsMenu(menu);
 	}
+
+	@Override
+	protected void onDestroy() {
+		removeReceivers();
+		Logger.d(TAG, "App onDestroy");
+		super.onDestroy();
+	}
+
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -134,85 +187,106 @@ public class MainActivity extends FragmentActivity {
 		return super.onOptionsItemSelected(item);
 	}
 
-	/**
-	 * A placeholder fragment containing a simple view.
-	 */
-	public static class PlaceholderFragment extends Fragment {
-		/**
-		 * The fragment argument representing the section number for this
-		 * fragment.
-		 */
-		private static final String ARG_SECTION_NUMBER = "section_number";
-
-		/**
-		 * Returns a new instance of this fragment for the given section
-		 * number.
-		 */
-		public static PlaceholderFragment newInstance(int sectionNumber) {
-			PlaceholderFragment fragment = new PlaceholderFragment();
-			Bundle args = new Bundle();
-			args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-			fragment.setArguments(args);
-			return fragment;
-		}
-
-		public PlaceholderFragment() {
-		}
-
-		@Override
-		public View onCreateView(LayoutInflater inflater, ViewGroup container,
-				Bundle savedInstanceState) {
-			View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-			TextView textView = (TextView) rootView.findViewById(R.id.section_label);
-			textView.setText(Integer.toString(getArguments().getInt(ARG_SECTION_NUMBER)));
-			return rootView;
-		}
-
-		@Override
-		public void onAttach(Activity activity) {
-			super.onAttach(activity);
-			((MainActivity) activity).onSectionAttached(
-					getArguments().getInt(ARG_SECTION_NUMBER));
-		}
-	}
-
-	public void onClickStartScanning(View view) {
-		Logger.d(TAG, "Click on Scan Button");
-		
-		Logger.d(TAG, "Registering Response Receiver");
-		IntentFilter mIntentFilter = new IntentFilter(
-				CustomConstants.Broadcasts.BROADCAST_1.getString());
-
-		mScanReceiver = new ResponseReceiver();
-		Logger.d(TAG, "Registering Receiver");
-		LocalBroadcastManager.getInstance(this).registerReceiver(mScanReceiver,
-				mIntentFilter);
-		
-		new ScanProcess().scanForIBeacons(MainActivity.this, mScanTime, mGapTime);
-	}
-
-	public void launchRingDialog () {
-		final ProgressDialog ringProgressDialog = ProgressDialog.show(MainActivity.this, "Please wait ...",	"Scanning ...", true);
-		ringProgressDialog.setCancelable(true);
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					Thread.sleep(mScanTime);
-				} catch (Exception e) {
-					Logger.e(TAG, e.getLocalizedMessage());
-				}
-				ringProgressDialog.dismiss();
-			}
-		}).start();
-	}
-
 	@Override
 	protected void onPause() {
 		// Cancel the alarm
+		SuperActivityToast.cancelAllSuperActivityToasts();
 		new ScanProcess().cancelServiceAlarm(this);
-		removeReceivers();
 		Logger.d(TAG, "App onPause");
 		super.onPause();
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		SuperActivityToast.cancelAllSuperActivityToasts();
+		
+		if (!mBluetoothUtils.isBluetoothLeSupported()) {
+			mSuperActivityToast = ToastUtils.makeWarningToast(this, mToastString4 );
+		} else {
+			if (!mBluetoothUtils.isBluetoothOn()) {
+				new ScanProcess().cancelServiceAlarm(this);
+				mBluetoothUtils.askUserToEnableBluetoothIfNeeded();
+			}
+			if (mBluetoothUtils.isBluetoothOn()
+					&& mBluetoothUtils.isBluetoothLeSupported()) {
+				Logger.i(TAG, "Bluetooth has been activated");
+				mButton.setEnabled(mButtonState);
+				if (!mButtonState) {
+					mButton.setText(getResources().getString(R.string.label_stop_scanning));
+				}
+				if (isScanRunning && mButtonState) {
+					Logger.d(TAG, "Resuming Scan");
+					new ScanProcess().scanForIBeacons(MainActivity.this, mScanTime, mGapTime);
+				} else if (!isScanRunning && !mButtonState) {
+					mSuperActivityToast = ToastUtils.makeProgressToast(this, mSuperActivityToast, mToastString5 );
+				}
+				if (mTextViewContents != null && !mTextViewContents.equals("")) {
+					mTextView.setText(mTextViewContents);
+				}
+			} else {
+				mSuperActivityToast = ToastUtils.makeProgressToast(this, mSuperActivityToast, mToastString3 );
+			}
+		}
+	}
+
+
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		outState.putCharSequence(CustomConstants.Payloads.PAYLOAD_1.toString(), mTextViewContents);
+		outState.putBoolean(CustomConstants.Payloads.PAYLOAD_2.toString(), isScanRunning);
+		outState.putBoolean(CustomConstants.Payloads.PAYLOAD_3.toString(), mButton.isEnabled());
+		super.onSaveInstanceState(outState);
+	}
+
+	private void registerMonitorTask() {
+		Logger.d(TAG, "Starting Monitor Task");
+		mMonitorTask = new MonitorTask(new OnBeaconDataChangedListener() {
+			@Override
+			public void onDataChanged() {
+				Logger.d(TAG, "Singleton Data Changed");
+				notifyTextViewDataChanged();
+			}
+		});
+		mMonitorTask.start();
+	}
+
+
+
+	private void registerResponseReceiver() {
+		Logger.d(TAG, "Registering Response Receiver");
+		IntentFilter intentFilter = new IntentFilter();
+		intentFilter.addAction(CustomConstants.Broadcasts.BROADCAST_1.getString());
+		intentFilter.addAction(CustomConstants.Broadcasts.BROADCAST_2.getString());
+
+		mScanReceiver = new ResponseReceiver();
+		this.registerReceiver(mScanReceiver, intentFilter);
+	}
+
+	protected void removeReceivers() {
+		try {
+			this.unregisterReceiver(mScanReceiver);
+			Logger.d(TAG, "Scan Receiver Unregistered Successfully");
+		} catch (Exception e) {
+			Logger.d(
+					TAG,
+					"Scan Receiver Already Unregistered. Exception : "
+							+ e.getLocalizedMessage());
+		}
+	}
+
+	public void restoreActionBar() {
+		ActionBar actionBar = getActionBar();
+		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
+		actionBar.setDisplayShowTitleEnabled(true);
+		actionBar.setTitle(mTitle);
+	}
+
+	protected void stopMonitorTask() {
+		if (mMonitorTask != null) {
+			Logger.d(TAG, "Monitor Task paused");
+			mMonitorTask.stop();
+		}
 	}
 }

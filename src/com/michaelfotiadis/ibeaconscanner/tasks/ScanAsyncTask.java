@@ -8,8 +8,10 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
 
+import com.michaelfotiadis.ibeaconscanner.containers.CustomConstants;
 import com.michaelfotiadis.ibeaconscanner.datastore.Singleton;
 import com.michaelfotiadis.ibeaconscanner.utils.Logger;
 
@@ -88,6 +90,11 @@ public class ScanAsyncTask extends AsyncTask<Void, Void, Void>{
 		Logger.i(TAG, "onPostExecute");
 		Logger.d(TAG, "Map contains " + mDeviceMap.size() + " unique devices.");
 		Singleton.getInstance().pruneDeviceList(mDeviceMap);
+		
+		Intent broadcastIntent = new Intent(CustomConstants.Broadcasts.BROADCAST_2.getString());
+		Logger.i(TAG, "Broadcasting Scanning Status Finished");
+		context.sendBroadcast(broadcastIntent);
+		
 		super.onPostExecute(result);
 	}
 

@@ -1,5 +1,7 @@
 package com.michaelfotiadis.ibeaconscanner.containers;
 
+import java.text.DecimalFormat;
+
 /**
  * Class for storing constants used throughout the app
  * 
@@ -25,7 +27,8 @@ public class CustomConstants {
 	
 	public enum Payloads {
 		PAYLOAD_1("Payload_1"),
-		PAYLOAD_2("Payload_2");
+		PAYLOAD_2("Payload_2"), 
+		PAYLOAD_3("Payload_3");
 		
 		private String text;
 		Payloads(String description) {
@@ -66,22 +69,11 @@ public class CustomConstants {
 		}
 	}; 
 	
-    public static final int REQUEST_CODE_1 = 1;
-    public static final int REQUEST_CODE_2 = 2;
-    public static final int REQUEST_CODE_3 = 3;
-    
+	public final static DecimalFormat df = new DecimalFormat("#.00");
+	
 	// Device identifier string
 	public static final String BLUETOOTH_DEVICE = "Bluetooth LE Device";
-
-	// Result for the BroadCast Receiver
-	public static boolean SERVICE_RESULT; 
-
 	
 	public static final String LINE_SEPARATOR = System.getProperty("line.separator");
-	
-	// Configuration File status boolean
-	public static boolean IS_CONFIG_FILE_SET = false;
-
-	public static String CLOSEST_DEVICE;
 	
 }

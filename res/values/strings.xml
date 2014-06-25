@@ -10,5 +10,7 @@
     <string name="action_example">Example action</string>
     <string name="action_settings">Settings</string>
     <string name="label_start_scanning">Start Scanning</string>
+    <string name="label_stop_scanning">Stop Scanning</string>
+    <string name="label_textviewResults">No Results Yet</string>
 
 </resources>

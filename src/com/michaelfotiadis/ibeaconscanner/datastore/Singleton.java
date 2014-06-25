@@ -1,5 +1,6 @@
 package com.michaelfotiadis.ibeaconscanner.datastore;
 
+import java.util.Calendar;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,6 +29,8 @@ public class Singleton {
 	
 	private int mNumberOfScans;
 
+	private long mTimeOfLastUpdate = 0;
+	
 	public int getNumberOfScans() {
 		return mNumberOfScans;
 	}
@@ -52,7 +55,7 @@ public class Singleton {
 		}
 		return _instance;
 	}
-
+	
 	/**
 	 * 
 	 * @param instance Sets the Instance of the Singleton
@@ -128,6 +131,7 @@ public class Singleton {
 			}
 		}
 		reportMapContents();
+		mTimeOfLastUpdate = Calendar.getInstance().getTimeInMillis();
 	}
 
 	/**
@@ -154,6 +158,17 @@ public class Singleton {
 		Logger.d(TAG, "Number of devices moving nearer : " + mMovingNearDevicesList.size());
 		Logger.d(TAG, "Number of devices moving farther away : " + mMovingAwayDevicesList.size());
 		Logger.d(TAG, "Number of devices that disappeared : " + mDissapearingDevicesList.size());
+		
+
+		
+	}
+
+	/**
+	 * 
+	 * @return The time in milliseconds of the last time the singleton was updated 
+	 */
+	public long getTimeOfLastUpdate() {
+		return mTimeOfLastUpdate;
 	}
 
 	/**
@@ -163,5 +178,5 @@ public class Singleton {
 	public ConcurrentHashMap<String, BluetoothLeDevice> getAvailableDevicesList() {
 		return mAvailableDevicesList;
 	}
-
+	
 }
