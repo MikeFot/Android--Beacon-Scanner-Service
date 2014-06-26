@@ -28,8 +28,6 @@ import com.michaelfotiadis.ibeaconscanner.utils.ToastUtils;
 
 public class MainActivity extends FragmentActivity {
 
-
-
 	public class ResponseReceiver extends BroadcastReceiver {
 		private String TAG = "Response Receiver";
 		@Override
@@ -40,13 +38,17 @@ public class MainActivity extends FragmentActivity {
 				Logger.i(TAG, "Scan Running");
 				SuperActivityToast.cancelAllSuperActivityToasts();
 				isScanRunning = true;
-				mSuperActivityToast = ToastUtils.makeProgressToast(MainActivity.this, mSuperActivityToast, mToastString1);
+				isToastScanningNowShown = true;
+				mSuperActivityToast = ToastUtils.makeProgressToast(MainActivity.this, mSuperActivityToast, mToastStringScanningNow);
 				mButton.setText(getResources().getString(R.string.label_stop_scanning));
+				
 			} else if (intent.getAction().equalsIgnoreCase(
 					CustomConstants.Broadcasts.BROADCAST_2.getString())) {
 				Logger.i(TAG, "Service Finished");
 				SuperActivityToast.cancelAllSuperActivityToasts();
-				ToastUtils.makeInfoToast(MainActivity.this, mToastString2);
+				isToastScanningNowShown = false;
+//				isToastStoppingScanShown = false;
+				ToastUtils.makeInfoToast(MainActivity.this, mToastStringScanFinished);
 				mButton.setEnabled(true);
 			}
 		}
@@ -80,12 +82,15 @@ public class MainActivity extends FragmentActivity {
 
 	private SuperActivityToast mSuperActivityToast;
 
-	private final String mToastString1 = "Scanning...";
-	private final String mToastString2 = "Scan finished";
-	private final String mToastString3 = "Please enable bluetooth to continue...";
-	private final String mToastString4 = "Device does not support Bluetooth LE";
-	private final String mToastString5 = "Stopping Scan...";
+	private final String mToastStringScanningNow = "Scanning...";
+	private final String mToastStringScanFinished = "Scan finished";
+	private final String mToastStringEnableLE = "Please enable bluetooth to continue...";
+	private final String mToastStringNoLE = "Device does not support Bluetooth LE";
+	private final String mToastStringScanInterrupted = "Scan Interrupted";
 
+	private boolean isToastScanningNowShown;
+	private boolean isToastStoppingScanShown;
+	
 	private boolean mButtonState = true;
 
 	private void notifyTextViewDataChanged() {
@@ -123,9 +128,10 @@ public class MainActivity extends FragmentActivity {
 
 		if (isScanRunning) {
 			// Cancels the alarms if the scan is already running
-			mButton.setEnabled(false);
-			new ScanProcess().cancelServiceAlarm(this);
-			mSuperActivityToast = ToastUtils.makeProgressToast(this, mSuperActivityToast, mToastString5 );
+//			mButton.setEnabled(false);
+			new ScanProcess().cancelService(this);
+			isToastScanningNowShown = false;
+			mSuperActivityToast = ToastUtils.makeInfoToast(this, mToastStringScanInterrupted);
 			mButton.setText(getResources().getString(R.string.label_start_scanning));
 			isScanRunning = false;
 		} else {
@@ -147,6 +153,8 @@ public class MainActivity extends FragmentActivity {
 			mTextViewContents = savedInstanceState.getCharSequence(CustomConstants.Payloads.PAYLOAD_1.toString());
 			isScanRunning = savedInstanceState.getBoolean(CustomConstants.Payloads.PAYLOAD_2.toString(), false);
 			mButtonState = savedInstanceState.getBoolean(CustomConstants.Payloads.PAYLOAD_3.toString(), true);
+			isToastScanningNowShown  = savedInstanceState.getBoolean(CustomConstants.Payloads.PAYLOAD_4.toString(), false);
+			isToastStoppingScanShown  = savedInstanceState.getBoolean(CustomConstants.Payloads.PAYLOAD_5.toString(), false);
 		}
 
 		mButton = (Button) findViewById(R.id.buttonStartScanningMain);
@@ -191,7 +199,7 @@ public class MainActivity extends FragmentActivity {
 	protected void onPause() {
 		// Cancel the alarm
 		SuperActivityToast.cancelAllSuperActivityToasts();
-		new ScanProcess().cancelServiceAlarm(this);
+		new ScanProcess().cancelService(this);
 		Logger.d(TAG, "App onPause");
 		super.onPause();
 	}
@@ -202,30 +210,34 @@ public class MainActivity extends FragmentActivity {
 		SuperActivityToast.cancelAllSuperActivityToasts();
 		
 		if (!mBluetoothUtils.isBluetoothLeSupported()) {
-			mSuperActivityToast = ToastUtils.makeWarningToast(this, mToastString4 );
+			mSuperActivityToast = ToastUtils.makeWarningToast(this, mToastStringNoLE );
 		} else {
 			if (!mBluetoothUtils.isBluetoothOn()) {
-				new ScanProcess().cancelServiceAlarm(this);
+				new ScanProcess().cancelService(this);
 				mBluetoothUtils.askUserToEnableBluetoothIfNeeded();
 			}
 			if (mBluetoothUtils.isBluetoothOn()
 					&& mBluetoothUtils.isBluetoothLeSupported()) {
 				Logger.i(TAG, "Bluetooth has been activated");
 				mButton.setEnabled(mButtonState);
-				if (!mButtonState) {
-					mButton.setText(getResources().getString(R.string.label_stop_scanning));
-				}
 				if (isScanRunning && mButtonState) {
-					Logger.d(TAG, "Resuming Scan");
+					Logger.d(TAG, "Restarting Scan Service");
 					new ScanProcess().scanForIBeacons(MainActivity.this, mScanTime, mGapTime);
-				} else if (!isScanRunning && !mButtonState) {
-					mSuperActivityToast = ToastUtils.makeProgressToast(this, mSuperActivityToast, mToastString5 );
+				} 
+				
+				if(isToastScanningNowShown) {
+					mSuperActivityToast = ToastUtils.makeProgressToast(this, mSuperActivityToast, mToastStringScanningNow);
 				}
+				
+//				if (isToastStoppingScanShown) {
+//					mSuperActivityToast = ToastUtils.makeProgressToast(this, mSuperActivityToast, mToastStringStoppingScan);
+//				}
+				
 				if (mTextViewContents != null && !mTextViewContents.equals("")) {
 					mTextView.setText(mTextViewContents);
 				}
 			} else {
-				mSuperActivityToast = ToastUtils.makeProgressToast(this, mSuperActivityToast, mToastString3 );
+				mSuperActivityToast = ToastUtils.makeProgressToast(this, mSuperActivityToast, mToastStringEnableLE);
 			}
 		}
 	}
@@ -237,6 +249,8 @@ public class MainActivity extends FragmentActivity {
 		outState.putCharSequence(CustomConstants.Payloads.PAYLOAD_1.toString(), mTextViewContents);
 		outState.putBoolean(CustomConstants.Payloads.PAYLOAD_2.toString(), isScanRunning);
 		outState.putBoolean(CustomConstants.Payloads.PAYLOAD_3.toString(), mButton.isEnabled());
+		outState.putBoolean(CustomConstants.Payloads.PAYLOAD_4.toString(), isToastScanningNowShown);
+		outState.putBoolean(CustomConstants.Payloads.PAYLOAD_5.toString(), isToastStoppingScanShown);
 		super.onSaveInstanceState(outState);
 	}
 

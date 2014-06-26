@@ -28,7 +28,9 @@ public class CustomConstants {
 	public enum Payloads {
 		PAYLOAD_1("Payload_1"),
 		PAYLOAD_2("Payload_2"), 
-		PAYLOAD_3("Payload_3");
+		PAYLOAD_3("Payload_3"), 
+		PAYLOAD_4("Payload_4"), 
+		PAYLOAD_5("Payload_5");
 		
 		private String text;
 		Payloads(String description) {
