@@ -14,3 +14,6 @@ Android devices running OS version 18+ and which can support receiving of Blueto
 
 ##Usage
 The Main Activity provided is just for demo purposes. All the results are reported through a Logger utility.
+
+##Sample Project
+https://play.google.com/store/apps/details?id=com.michaelfotiadis.ibeaconscanner
