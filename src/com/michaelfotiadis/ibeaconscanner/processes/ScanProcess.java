@@ -1,20 +1,15 @@
 package com.michaelfotiadis.ibeaconscanner.processes;
 
-import android.app.ActivityManager;
-import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 
-//import com.eratosthenes.ibeaconscanner.services.ScanService;
-
-
-
-import com.michaelfotiadis.ibeaconscanner.containers.CustomConstants;
 import com.michaelfotiadis.ibeaconscanner.datastore.Singleton;
 import com.michaelfotiadis.ibeaconscanner.services.ScanService;
 import com.michaelfotiadis.ibeaconscanner.utils.Logger;
+//import com.eratosthenes.ibeaconscanner.services.ScanService;
+import com.michaelfotiadis.ibeaconscanner.containers.CustomConstants;
 
 public class ScanProcess {
 
@@ -65,16 +60,6 @@ public class ScanProcess {
 		return alarmUp;
 	}
 
-	private boolean isMyServiceRunning(Context context) {
-		ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-		for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-			if (ScanService.class.getName().equals(service.service.getClassName())) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 	public void cancelService(Context context) {
 			Logger.d(TAG, "Cancelling Service Alarm");
 			Intent repeatingIntent = new Intent(context, ScanService.class);
@@ -82,10 +67,5 @@ public class ScanProcess {
 					PendingIntent.FLAG_CANCEL_CURRENT);
 			AlarmManager alarm = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 			alarm.cancel(pengindIntent);
-//		if (isMyServiceRunning(context)) {
-//			Logger.d(TAG, "Killing Service");
-//			context.stopService(new Intent(context, ScanService.class));
-//		}
-
 	}
 }

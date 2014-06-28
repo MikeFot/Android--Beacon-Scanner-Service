@@ -6,9 +6,8 @@
 
     <uses-sdk
         android:minSdkVersion="18"
-        android:targetSdkVersion="19" />
+        android:targetSdkVersion="20" />
 
-    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
