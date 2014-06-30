@@ -1,6 +1,8 @@
 package com.michaelfotiadis.ibeaconscanner.datastore;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -23,8 +25,8 @@ public class Singleton {
 	private ConcurrentHashMap<String, BluetoothLeDevice> mAvailableDevicesList;
 	private ConcurrentHashMap<String, BluetoothLeDevice> mUpdatedDevicesList;
 	private ConcurrentHashMap<String, BluetoothLeDevice> mNewDevicesList;
-	private ConcurrentHashMap<String, BluetoothLeDevice> mMovingNearDevicesList;
-	private ConcurrentHashMap<String, BluetoothLeDevice> mMovingAwayDevicesList;
+	private ConcurrentHashMap<String, BluetoothLeDevice> mMovingCloserDevicesList;
+	private ConcurrentHashMap<String, BluetoothLeDevice> mMovingFartherDevicesList;
 	private ConcurrentHashMap<String, BluetoothLeDevice> mDissapearingDevicesList;
 	
 	private int mNumberOfScans;
@@ -74,14 +76,24 @@ public class Singleton {
 		mNewDevicesList = new ConcurrentHashMap<String, BluetoothLeDevice>();
 		mUpdatedDevicesList = new ConcurrentHashMap<String, BluetoothLeDevice>();
 
-		mMovingAwayDevicesList = new ConcurrentHashMap<String, BluetoothLeDevice>();
-		mMovingNearDevicesList = new ConcurrentHashMap<String, BluetoothLeDevice>();
+		mMovingFartherDevicesList = new ConcurrentHashMap<String, BluetoothLeDevice>();
+		mMovingCloserDevicesList = new ConcurrentHashMap<String, BluetoothLeDevice>();
 
 		mDissapearingDevicesList = new ConcurrentHashMap<String, BluetoothLeDevice>();
 		
 		mNumberOfScans = 0;
 	}
 
+	public BluetoothLeDevice getBluetoothLeDeviceForAddress(String address) {
+		
+		for (BluetoothLeDevice device : mDeviceMap.values()) {
+			if (device.getAddress().equals(address)) {
+				return device;
+			}
+		}
+		return null;
+	}
+	
 	/**
 	 * Receives a Device Map and allocates the devices to the appropriate Singleton Device Map
 	 * @param inputDeviceMap String (ID) - BluetooLeDevice Map
@@ -92,8 +104,8 @@ public class Singleton {
 
 		mUpdatedDevicesList.clear();
 		mNewDevicesList.clear();
-		mMovingAwayDevicesList.clear();
-		mMovingNearDevicesList.clear();
+		mMovingFartherDevicesList.clear();
+		mMovingCloserDevicesList.clear();
 		mDissapearingDevicesList.clear();
 
 		for (BluetoothLeDevice originalDevice : mDeviceMap.values()) {
@@ -115,9 +127,9 @@ public class Singleton {
 				BluetoothLeDevice originalDevice = mDeviceMap.get(updatedDevice.getAddress());
 
 				if (updatedDevice.getRunningAverageRssi() <= originalDevice.getRunningAverageRssi()) {
-					mMovingNearDevicesList.put(updatedDevice.getAddress(), updatedDevice);
+					mMovingCloserDevicesList.put(updatedDevice.getAddress(), updatedDevice);
 				} else {
-					mMovingAwayDevicesList.put(updatedDevice.getAddress(), updatedDevice);
+					mMovingFartherDevicesList.put(updatedDevice.getAddress(), updatedDevice);
 				}
 
 				mDeviceMap.put(updatedDevice.getAddress(), updatedDevice);
@@ -155,8 +167,8 @@ public class Singleton {
 		Logger.d(TAG, "Number of available devices on the last scan : " + mAvailableDevicesList.size());
 		Logger.d(TAG, "Number of updated devices on the last scan : " + mUpdatedDevicesList.size());
 		Logger.d(TAG, "Number of new devices on the last scan : " + mNewDevicesList.size());
-		Logger.d(TAG, "Number of devices moving nearer : " + mMovingNearDevicesList.size());
-		Logger.d(TAG, "Number of devices moving farther away : " + mMovingAwayDevicesList.size());
+		Logger.d(TAG, "Number of devices moving nearer : " + mMovingCloserDevicesList.size());
+		Logger.d(TAG, "Number of devices moving farther away : " + mMovingFartherDevicesList.size());
 		Logger.d(TAG, "Number of devices that disappeared : " + mDissapearingDevicesList.size());
 		
 
@@ -177,6 +189,102 @@ public class Singleton {
 	 */
 	public ConcurrentHashMap<String, BluetoothLeDevice> getAvailableDevicesList() {
 		return mAvailableDevicesList;
+	}
+	
+	public int getAvailableDeviceListSize() {
+		if (mAvailableDevicesList != null) {
+			return mAvailableDevicesList.size();
+		} else {
+			return 0;
+		}
+	}
+	
+	public int getNewDeviceListSize() {
+		if (mNewDevicesList != null) {
+			return mNewDevicesList.size();
+		} else {
+			return 0;
+		}
+	}
+	
+	public int getUpdatedDeviceListSize() {
+		if (mUpdatedDevicesList != null) {
+			return mUpdatedDevicesList.size();
+		} else {
+			return 0;
+		}
+	}
+	
+	public int getMovingCloserDeviceListSize() {
+		if (mMovingCloserDevicesList != null) {
+			return mMovingCloserDevicesList.size();
+		} else {
+			return 0;
+		}
+	}
+	
+	public int getMovingFartherDeviceListSize() {
+		if (mMovingFartherDevicesList != null) {
+			return mMovingFartherDevicesList.size();
+		} else {
+			return 0;
+		}
+	}
+	
+	public int getDissappearingDeviceListSize() {
+		if (mDissapearingDevicesList != null) {
+			return mDissapearingDevicesList.size();
+		} else {
+			return 0;
+		}
+	}
+	
+	public List<String> getDevicesAvailableAsStringList() {
+		List<String> list = new ArrayList<String>();
+		for (BluetoothLeDevice device : mAvailableDevicesList.values()) {
+			list.add(device.getAddress());
+		}
+		return list;
+	}
+	
+	public List<String> getDevicesNewAsStringList() {
+		List<String> list = new ArrayList<String>();
+		for (BluetoothLeDevice device : mNewDevicesList.values()) {
+			list.add(device.getAddress());
+		}
+		return list;
+	}
+	
+	public List<String> getDevicesUpdatedAsStringList() {
+		List<String> list = new ArrayList<String>();
+		for (BluetoothLeDevice device : mUpdatedDevicesList.values()) {
+			list.add(device.getAddress());
+		}
+		return list;
+	}
+	
+	public List<String> getDevicesMovingCloserAsStringList() {
+		List<String> list = new ArrayList<String>();
+		for (BluetoothLeDevice device : mMovingCloserDevicesList.values()) {
+			list.add(device.getAddress());
+		}
+		return list;
+	}
+	
+	public List<String> getDevicesMovingFartherAsStringList() {
+		List<String> list = new ArrayList<String>();
+		for (BluetoothLeDevice device : mMovingFartherDevicesList.values()) {
+			list.add(device.getAddress());
+		}
+		return list;
+	}
+	
+	public List<String> getDevicesDissappearingAsStringList() {
+		List<String> list = new ArrayList<String>();
+		for (BluetoothLeDevice device : mDissapearingDevicesList.values()) {
+			list.add(device.getAddress());
+		}
+		return list;
 	}
 	
 }

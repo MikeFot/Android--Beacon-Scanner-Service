@@ -1,7 +1,9 @@
 package com.michaelfotiadis.ibeaconscanner.activities;
 
-import uk.co.alt236.bluetoothlelib.device.BluetoothLeDevice;
-import uk.co.alt236.bluetoothlelib.device.IBeaconDevice;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 import android.app.ActionBar;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -13,10 +15,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
+import android.widget.ExpandableListView;
+import android.widget.ExpandableListView.OnChildClickListener;
 
 import com.github.johnpersano.supertoasts.SuperActivityToast;
 import com.michaelfotiadis.ibeaconscanner.R;
+import com.michaelfotiadis.ibeaconscanner.adapter.MyExpandableListAdapter;
 import com.michaelfotiadis.ibeaconscanner.containers.CustomConstants;
 import com.michaelfotiadis.ibeaconscanner.datastore.Singleton;
 import com.michaelfotiadis.ibeaconscanner.processes.ScanProcess;
@@ -26,7 +30,7 @@ import com.michaelfotiadis.ibeaconscanner.utils.BluetoothUtils;
 import com.michaelfotiadis.ibeaconscanner.utils.Logger;
 import com.michaelfotiadis.ibeaconscanner.utils.ToastUtils;
 
-public class MainActivity extends FragmentActivity {
+public class MainActivity extends FragmentActivity implements OnChildClickListener {
 
 	public class ResponseReceiver extends BroadcastReceiver {
 		private String TAG = "Response Receiver";
@@ -41,13 +45,13 @@ public class MainActivity extends FragmentActivity {
 				isToastScanningNowShown = true;
 				mSuperActivityToast = ToastUtils.makeProgressToast(MainActivity.this, mSuperActivityToast, mToastStringScanningNow);
 				mButton.setText(getResources().getString(R.string.label_stop_scanning));
-				
+
 			} else if (intent.getAction().equalsIgnoreCase(
 					CustomConstants.Broadcasts.BROADCAST_2.getString())) {
 				Logger.i(TAG, "Service Finished");
 				SuperActivityToast.cancelAllSuperActivityToasts();
 				isToastScanningNowShown = false;
-//				isToastStoppingScanShown = false;
+				//				isToastStoppingScanShown = false;
 				ToastUtils.makeInfoToast(MainActivity.this, mToastStringScanFinished);
 				mButton.setEnabled(true);
 			}
@@ -69,7 +73,7 @@ public class MainActivity extends FragmentActivity {
 	// use Gap Time of -1 to disable repeated scanning
 	private final int mGapTime = 5000;
 
-	private TextView mTextView;
+	private ExpandableListView mExpandableListView;
 	private CharSequence mTextViewContents;
 
 	private MonitorTask mMonitorTask;
@@ -90,36 +94,19 @@ public class MainActivity extends FragmentActivity {
 
 	private boolean isToastScanningNowShown;
 	private boolean isToastStoppingScanShown;
-	
+
 	private boolean mButtonState = true;
 
-	private void notifyTextViewDataChanged() {
+	private void notifyDataChanged() {
 
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-
 				if (Singleton.getInstance().getAvailableDevicesList() != null) {
-					mTextView.setText("Number of Available Devices : " 
-							+ String.valueOf(Singleton.getInstance().getAvailableDevicesList().size()));
-
-					StringBuilder message;
-					for (BluetoothLeDevice device : Singleton.getInstance().getAvailableDevicesList().values()) {
-
-						IBeaconDevice iBeacon = new IBeaconDevice(device);
-						message = new StringBuilder();
-						message.append(CustomConstants.LINE_SEPARATOR);
-						message.append("ID : ");
-						message.append(iBeacon.getAddress());
-						message.append(" with Accuracy : ");
-						message.append(CustomConstants.df.format(iBeacon.getAccuracy()));
-						message.append(" m");
-						mTextView.append(message.toString());
-					}
+					updateListData();
 				}
 			}
 		});
-
 	}
 
 	public void onClickStartScanning(View view) {
@@ -128,7 +115,7 @@ public class MainActivity extends FragmentActivity {
 
 		if (isScanRunning) {
 			// Cancels the alarms if the scan is already running
-//			mButton.setEnabled(false);
+			//			mButton.setEnabled(false);
 			new ScanProcess().cancelService(this);
 			isToastScanningNowShown = false;
 			mSuperActivityToast = ToastUtils.makeInfoToast(this, mToastStringScanInterrupted);
@@ -147,7 +134,9 @@ public class MainActivity extends FragmentActivity {
 
 		Logger.d(TAG, "Starting Main Activity");
 
-		mTextView = (TextView) findViewById(R.id.textViewReportScanResults);
+		mExpandableListView = (ExpandableListView) findViewById(R.id.listViewResults);
+		mExpandableListView.setOnChildClickListener(this);
+
 
 		if (savedInstanceState != null) {
 			mTextViewContents = savedInstanceState.getCharSequence(CustomConstants.Payloads.PAYLOAD_1.toString());
@@ -168,6 +157,33 @@ public class MainActivity extends FragmentActivity {
 		// Wait for broadcasts from the scanning process
 		registerResponseReceiver();
 		SuperActivityToast.cancelAllSuperActivityToasts();
+	}
+	MyExpandableListAdapter mListAdapter;
+	List<String> mListDataHeader;
+	HashMap<String, List<String>> mListDataChild;
+
+	private void updateListData() {
+
+		Logger.d(TAG, "Updating List Data");
+		mListDataHeader = new ArrayList<String>();
+		mListDataHeader.add("Available Devices (" + Singleton.getInstance().getAvailableDeviceListSize() + ")");
+		mListDataHeader.add("New Devices (" + Singleton.getInstance().getNewDeviceListSize() + ")");
+		mListDataHeader.add("Updated Devices (" + Singleton.getInstance().getUpdatedDeviceListSize() + ")");
+		mListDataHeader.add("Moving Closer Devices (" + Singleton.getInstance().getMovingCloserDeviceListSize() + ")");
+		mListDataHeader.add("Moving Farther Device (" + Singleton.getInstance().getMovingFartherDeviceListSize() + ")");
+		mListDataHeader.add("Dissappearing Devices (" + Singleton.getInstance().getDissappearingDeviceListSize() + ")");
+
+		mListDataChild = new HashMap<String, List<String>>();
+		mListDataChild.put(mListDataHeader.get(0), Singleton.getInstance().getDevicesAvailableAsStringList());
+		mListDataChild.put(mListDataHeader.get(1), Singleton.getInstance().getDevicesNewAsStringList());
+		mListDataChild.put(mListDataHeader.get(2), Singleton.getInstance().getDevicesUpdatedAsStringList());
+		mListDataChild.put(mListDataHeader.get(3), Singleton.getInstance().getDevicesMovingCloserAsStringList());
+		mListDataChild.put(mListDataHeader.get(4), Singleton.getInstance().getDevicesMovingFartherAsStringList());
+		mListDataChild.put(mListDataHeader.get(5), Singleton.getInstance().getDevicesDissappearingAsStringList());
+
+		mListAdapter = new MyExpandableListAdapter(this, mListDataHeader, mListDataChild);
+		Logger.d(TAG, "Setting Adapter");
+		mExpandableListView.setAdapter(mListAdapter);
 	}
 
 	@Override
@@ -208,7 +224,7 @@ public class MainActivity extends FragmentActivity {
 	protected void onResume() {
 		super.onResume();
 		SuperActivityToast.cancelAllSuperActivityToasts();
-		
+
 		if (!mBluetoothUtils.isBluetoothLeSupported()) {
 			mSuperActivityToast = ToastUtils.makeWarningToast(this, mToastStringNoLE );
 		} else {
@@ -224,18 +240,12 @@ public class MainActivity extends FragmentActivity {
 					Logger.d(TAG, "Restarting Scan Service");
 					new ScanProcess().scanForIBeacons(MainActivity.this, mScanTime, mGapTime);
 				} 
-				
+
 				if(isToastScanningNowShown) {
 					mSuperActivityToast = ToastUtils.makeProgressToast(this, mSuperActivityToast, mToastStringScanningNow);
 				}
-				
-//				if (isToastStoppingScanShown) {
-//					mSuperActivityToast = ToastUtils.makeProgressToast(this, mSuperActivityToast, mToastStringStoppingScan);
-//				}
-				
-				if (mTextViewContents != null && !mTextViewContents.equals("")) {
-					mTextView.setText(mTextViewContents);
-				}
+
+				updateListData();
 			} else {
 				mSuperActivityToast = ToastUtils.makeProgressToast(this, mSuperActivityToast, mToastStringEnableLE);
 			}
@@ -260,7 +270,7 @@ public class MainActivity extends FragmentActivity {
 			@Override
 			public void onDataChanged() {
 				Logger.d(TAG, "Singleton Data Changed");
-				notifyTextViewDataChanged();
+				notifyDataChanged();
 			}
 		});
 		mMonitorTask.start();
@@ -303,4 +313,28 @@ public class MainActivity extends FragmentActivity {
 			mMonitorTask.stop();
 		}
 	}
+
+	@Override
+	public boolean onChildClick(ExpandableListView parent, View v,
+			int groupPosition, int childPosition, long id) {
+
+		try {
+			Logger.d(TAG, "Size of Data Child List " + mListDataChild.values().size());
+			Logger.d(TAG, "Group Position : " + groupPosition);
+			Logger.d(TAG, "Child Position : " + childPosition);
+			
+			String address = mListDataChild.get(mListDataHeader.get(groupPosition)).get(childPosition);
+			Logger.d(TAG, "Starting Display Activity for address "  + address);
+			
+			Intent intent = new Intent(this, DeviceActivity.class);
+			intent.putExtra(CustomConstants.Payloads.PAYLOAD_1.toString(), 
+					Singleton.getInstance().getBluetoothLeDeviceForAddress(address));
+			startActivity(intent);
+		} catch (Exception e) {
+			Logger.e(TAG, "Null Data Child List " + e.getLocalizedMessage());
+			e.printStackTrace();
+		}
+		return false;
+	}
+
 }
