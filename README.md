@@ -13,3 +13,9 @@ https://github.com/JohnPersano/SuperToasts
 
 ##Target Platforms
 Android devices running OS version 18+ and which can support receiving of Bluetooth LE signal.
+
+##Usage
+The Main Activity is currently providing a simple visualisation of results.
+
+##Play Store Project
+https://play.google.com/store/apps/details?id=com.michaelfotiadis.ibeaconscanner
