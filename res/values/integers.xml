@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="default_scantime">5000</integer>
+    <integer name="default_pausetime">5000</integer>
+</resources>

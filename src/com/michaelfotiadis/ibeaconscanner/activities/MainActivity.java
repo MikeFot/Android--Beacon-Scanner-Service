@@ -8,9 +8,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ExpandableListView;
@@ -61,11 +64,6 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 
 	private Button mButton;
 
-	private final int mScanTime = 5000;
-
-	// use Gap Time of -1 to disable repeated scanning
-	private final int mGapTime = 5000;
-
 	private ExpandableListView mExpandableListView;
 	private CharSequence mTextViewContents;
 
@@ -73,7 +71,7 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 
 	// Receivers
 	private ResponseReceiver mScanReceiver;
-
+	private SharedPreferences mSharedPrefs;
 
 	private boolean isScanRunning = false;
 
@@ -112,10 +110,10 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 			Logger.d(TAG, "Size of Data Child List " + mListDataChild.values().size());
 			Logger.d(TAG, "Group Position : " + groupPosition);
 			Logger.d(TAG, "Child Position : " + childPosition);
-			
+
 			String address = mListDataChild.get(mListDataHeader.get(groupPosition)).get(childPosition);
 			Logger.d(TAG, "Starting Display Activity for address "  + address);
-			
+
 			Intent intent = new Intent(this, DeviceActivity.class);
 			intent.putExtra(CustomConstants.Payloads.PAYLOAD_1.toString(), 
 					Singleton.getInstance().getBluetoothLeDeviceForAddress(address));
@@ -139,8 +137,23 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 			isScanRunning = false;
 		} else {
 			// This ScanProcess will also cancel all alarms on continuation
-			new ScanProcess().scanForIBeacons(MainActivity.this, mScanTime, mGapTime);
+			new ScanProcess().scanForIBeacons(MainActivity.this, getScanTime(), getPauseTime());
 		}
+	}
+
+	private int getScanTime(){
+		String result = mSharedPrefs.getString(
+				getString(R.string.pref_scantime), 
+				String.valueOf(getResources().getInteger(R.integer.default_scantime)));
+		return Integer.parseInt(result);
+		
+	}
+
+	private int getPauseTime(){
+		String result =  mSharedPrefs.getString(
+				getString(R.string.pref_pausetime), 
+				String.valueOf(getResources().getInteger(R.integer.default_pausetime)));
+		return Integer.parseInt(result);
 	}
 
 	@Override
@@ -152,7 +165,8 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 
 		mExpandableListView = (ExpandableListView) findViewById(R.id.listViewResults);
 		mExpandableListView.setOnChildClickListener(this);
-
+		mSharedPrefs = PreferenceManager
+				.getDefaultSharedPreferences(this);
 
 		if (savedInstanceState != null) {
 			mTextViewContents = savedInstanceState.getCharSequence(CustomConstants.Payloads.PAYLOAD_1.toString());
@@ -175,7 +189,27 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
+		getMenuInflater().inflate(R.menu.main, menu);
 		return super.onCreateOptionsMenu(menu);
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// same as using a normal menu
+		switch (item.getItemId()) {
+		case R.id.action_settings:
+			startPreferencesActivity();
+			break;
+		}
+		return true;
+	}
+
+	private static final int RESULT_SETTINGS = 1;
+
+	private void startPreferencesActivity() {
+		Logger.d(TAG, "Starting Settings Activity");
+		Intent intent = new Intent(this, ScanPreferencesActivity.class);
+		startActivityForResult(intent, RESULT_SETTINGS);
 	}
 
 	@Override
@@ -213,7 +247,7 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 				Logger.i(TAG, "Bluetooth has been activated");
 				if (isScanRunning) {
 					Logger.d(TAG, "Restarting Scan Service");
-					new ScanProcess().scanForIBeacons(MainActivity.this, mScanTime, mGapTime);
+					new ScanProcess().scanForIBeacons(MainActivity.this, getScanTime(), getPauseTime());
 				} 
 
 				if(isToastScanningNowShown) {

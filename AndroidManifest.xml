@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.michaelfotiadis.ibeaconscanner"
-    android:versionCode="3"
-    android:versionName="1.11" >
+    android:versionCode="4"
+    android:versionName="1.12" >
 
     <uses-sdk
         android:minSdkVersion="18"
@@ -33,8 +33,12 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.michaelfotiadis.ibeaconscanner.activities.DeviceActivity"
+            android:name=".activities.DeviceActivity"
             android:label="@string/title_activity_device" >
+        </activity>
+        <activity
+            android:name=".activities.ScanPreferencesActivity"
+            android:label="@string/title_activity_number_picker" >
         </activity>
     </application>
 
