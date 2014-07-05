@@ -23,8 +23,8 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:onClick="onClickStartScanning"
-        android:background="@color/dark_gray"
-        android:textColor="@color/white"
+        android:background="@color/white"
+        android:textColor="@color/dark_gray"
         android:text="@string/label_start_scanning" />
 
 </RelativeLayout>

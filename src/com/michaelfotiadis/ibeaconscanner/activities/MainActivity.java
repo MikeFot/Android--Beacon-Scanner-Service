@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import android.app.ActionBar;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -12,7 +11,6 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ExpandableListView;
@@ -53,7 +51,6 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 				isToastScanningNowShown = false;
 				//				isToastStoppingScanShown = false;
 				ToastUtils.makeInfoToast(MainActivity.this, mToastStringScanFinished);
-				mButton.setEnabled(true);
 			}
 		}
 	}
@@ -63,10 +60,6 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 	private BluetoothUtils mBluetoothUtils;
 
 	private Button mButton;
-	/**
-	 * Used to store the last screen title. For use in {@link #restoreActionBar()}.
-	 */
-	private CharSequence mTitle;
 
 	private final int mScanTime = 5000;
 
@@ -88,15 +81,18 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 
 	private final String mToastStringScanningNow = "Scanning...";
 	private final String mToastStringScanFinished = "Scan finished";
-	private final String mToastStringEnableLE = "Please enable bluetooth to continue...";
+	private final String mToastStringEnableLE = "Waiting for Bluetooth adapter...";
 	private final String mToastStringNoLE = "Device does not support Bluetooth LE";
 	private final String mToastStringScanInterrupted = "Scan Interrupted";
 
 	private boolean isToastScanningNowShown;
 	private boolean isToastStoppingScanShown;
 
-	private boolean mButtonState = true;
+	MyExpandableListAdapter mListAdapter;
 
+	List<String> mListDataHeader;
+
+	HashMap<String, List<String>> mListDataChild;
 	private void notifyDataChanged() {
 
 		runOnUiThread(new Runnable() {
@@ -108,14 +104,34 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 			}
 		});
 	}
+	@Override
+	public boolean onChildClick(ExpandableListView parent, View v,
+			int groupPosition, int childPosition, long id) {
 
+		try {
+			Logger.d(TAG, "Size of Data Child List " + mListDataChild.values().size());
+			Logger.d(TAG, "Group Position : " + groupPosition);
+			Logger.d(TAG, "Child Position : " + childPosition);
+			
+			String address = mListDataChild.get(mListDataHeader.get(groupPosition)).get(childPosition);
+			Logger.d(TAG, "Starting Display Activity for address "  + address);
+			
+			Intent intent = new Intent(this, DeviceActivity.class);
+			intent.putExtra(CustomConstants.Payloads.PAYLOAD_1.toString(), 
+					Singleton.getInstance().getBluetoothLeDeviceForAddress(address));
+			startActivity(intent);
+		} catch (Exception e) {
+			Logger.e(TAG, "Null Data Child List " + e.getLocalizedMessage());
+			e.printStackTrace();
+		}
+		return false;
+	}
 	public void onClickStartScanning(View view) {
 		Logger.d(TAG, "Click on Scan Button");
 		SuperActivityToast.cancelAllSuperActivityToasts();
 
 		if (isScanRunning) {
 			// Cancels the alarms if the scan is already running
-			//			mButton.setEnabled(false);
 			new ScanProcess().cancelService(this);
 			isToastScanningNowShown = false;
 			mSuperActivityToast = ToastUtils.makeInfoToast(this, mToastStringScanInterrupted);
@@ -141,13 +157,11 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		if (savedInstanceState != null) {
 			mTextViewContents = savedInstanceState.getCharSequence(CustomConstants.Payloads.PAYLOAD_1.toString());
 			isScanRunning = savedInstanceState.getBoolean(CustomConstants.Payloads.PAYLOAD_2.toString(), false);
-			mButtonState = savedInstanceState.getBoolean(CustomConstants.Payloads.PAYLOAD_3.toString(), true);
 			isToastScanningNowShown  = savedInstanceState.getBoolean(CustomConstants.Payloads.PAYLOAD_4.toString(), false);
 			isToastStoppingScanShown  = savedInstanceState.getBoolean(CustomConstants.Payloads.PAYLOAD_5.toString(), false);
 		}
 
 		mButton = (Button) findViewById(R.id.buttonStartScanningMain);
-		mButton.setEnabled(false);
 
 		mBluetoothUtils = new BluetoothUtils(this);
 
@@ -157,33 +171,6 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		// Wait for broadcasts from the scanning process
 		registerResponseReceiver();
 		SuperActivityToast.cancelAllSuperActivityToasts();
-	}
-	MyExpandableListAdapter mListAdapter;
-	List<String> mListDataHeader;
-	HashMap<String, List<String>> mListDataChild;
-
-	private void updateListData() {
-
-		Logger.d(TAG, "Updating List Data");
-		mListDataHeader = new ArrayList<String>();
-		mListDataHeader.add("Available Devices (" + Singleton.getInstance().getAvailableDeviceListSize() + ")");
-		mListDataHeader.add("New Devices (" + Singleton.getInstance().getNewDeviceListSize() + ")");
-		mListDataHeader.add("Updated Devices (" + Singleton.getInstance().getUpdatedDeviceListSize() + ")");
-		mListDataHeader.add("Moving Closer Devices (" + Singleton.getInstance().getMovingCloserDeviceListSize() + ")");
-		mListDataHeader.add("Moving Farther Device (" + Singleton.getInstance().getMovingFartherDeviceListSize() + ")");
-		mListDataHeader.add("Dissappearing Devices (" + Singleton.getInstance().getDissappearingDeviceListSize() + ")");
-
-		mListDataChild = new HashMap<String, List<String>>();
-		mListDataChild.put(mListDataHeader.get(0), Singleton.getInstance().getDevicesAvailableAsStringList());
-		mListDataChild.put(mListDataHeader.get(1), Singleton.getInstance().getDevicesNewAsStringList());
-		mListDataChild.put(mListDataHeader.get(2), Singleton.getInstance().getDevicesUpdatedAsStringList());
-		mListDataChild.put(mListDataHeader.get(3), Singleton.getInstance().getDevicesMovingCloserAsStringList());
-		mListDataChild.put(mListDataHeader.get(4), Singleton.getInstance().getDevicesMovingFartherAsStringList());
-		mListDataChild.put(mListDataHeader.get(5), Singleton.getInstance().getDevicesDissappearingAsStringList());
-
-		mListAdapter = new MyExpandableListAdapter(this, mListDataHeader, mListDataChild);
-		Logger.d(TAG, "Setting Adapter");
-		mExpandableListView.setAdapter(mListAdapter);
 	}
 
 	@Override
@@ -198,18 +185,6 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		super.onDestroy();
 	}
 
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		// Handle action bar item clicks here. The action bar will
-		// automatically handle clicks on the Home/Up button, so long
-		// as you specify a parent activity in AndroidManifest.xml.
-		int id = item.getItemId();
-		if (id == R.id.action_settings) {
-			return true;
-		}
-		return super.onOptionsItemSelected(item);
-	}
 
 	@Override
 	protected void onPause() {
@@ -227,6 +202,7 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 
 		if (!mBluetoothUtils.isBluetoothLeSupported()) {
 			mSuperActivityToast = ToastUtils.makeWarningToast(this, mToastStringNoLE );
+			mButton.setEnabled(false);
 		} else {
 			if (!mBluetoothUtils.isBluetoothOn()) {
 				new ScanProcess().cancelService(this);
@@ -235,8 +211,7 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 			if (mBluetoothUtils.isBluetoothOn()
 					&& mBluetoothUtils.isBluetoothLeSupported()) {
 				Logger.i(TAG, "Bluetooth has been activated");
-				mButton.setEnabled(mButtonState);
-				if (isScanRunning && mButtonState) {
+				if (isScanRunning) {
 					Logger.d(TAG, "Restarting Scan Service");
 					new ScanProcess().scanForIBeacons(MainActivity.this, mScanTime, mGapTime);
 				} 
@@ -247,6 +222,7 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 
 				updateListData();
 			} else {
+				SuperActivityToast.cancelAllSuperActivityToasts();
 				mSuperActivityToast = ToastUtils.makeProgressToast(this, mSuperActivityToast, mToastStringEnableLE);
 			}
 		}
@@ -258,7 +234,6 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 	protected void onSaveInstanceState(Bundle outState) {
 		outState.putCharSequence(CustomConstants.Payloads.PAYLOAD_1.toString(), mTextViewContents);
 		outState.putBoolean(CustomConstants.Payloads.PAYLOAD_2.toString(), isScanRunning);
-		outState.putBoolean(CustomConstants.Payloads.PAYLOAD_3.toString(), mButton.isEnabled());
 		outState.putBoolean(CustomConstants.Payloads.PAYLOAD_4.toString(), isToastScanningNowShown);
 		outState.putBoolean(CustomConstants.Payloads.PAYLOAD_5.toString(), isToastStoppingScanShown);
 		super.onSaveInstanceState(outState);
@@ -300,13 +275,6 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		}
 	}
 
-	public void restoreActionBar() {
-		ActionBar actionBar = getActionBar();
-		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
-		actionBar.setDisplayShowTitleEnabled(true);
-		actionBar.setTitle(mTitle);
-	}
-
 	protected void stopMonitorTask() {
 		if (mMonitorTask != null) {
 			Logger.d(TAG, "Monitor Task paused");
@@ -314,27 +282,28 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		}
 	}
 
-	@Override
-	public boolean onChildClick(ExpandableListView parent, View v,
-			int groupPosition, int childPosition, long id) {
+	private void updateListData() {
 
-		try {
-			Logger.d(TAG, "Size of Data Child List " + mListDataChild.values().size());
-			Logger.d(TAG, "Group Position : " + groupPosition);
-			Logger.d(TAG, "Child Position : " + childPosition);
-			
-			String address = mListDataChild.get(mListDataHeader.get(groupPosition)).get(childPosition);
-			Logger.d(TAG, "Starting Display Activity for address "  + address);
-			
-			Intent intent = new Intent(this, DeviceActivity.class);
-			intent.putExtra(CustomConstants.Payloads.PAYLOAD_1.toString(), 
-					Singleton.getInstance().getBluetoothLeDeviceForAddress(address));
-			startActivity(intent);
-		} catch (Exception e) {
-			Logger.e(TAG, "Null Data Child List " + e.getLocalizedMessage());
-			e.printStackTrace();
-		}
-		return false;
+		Logger.d(TAG, "Updating List Data");
+		mListDataHeader = new ArrayList<String>();
+		mListDataHeader.add("Available Devices (" + Singleton.getInstance().getAvailableDeviceListSize() + ")");
+		mListDataHeader.add("New Devices (" + Singleton.getInstance().getNewDeviceListSize() + ")");
+		mListDataHeader.add("Updated Devices (" + Singleton.getInstance().getUpdatedDeviceListSize() + ")");
+		mListDataHeader.add("Moving Closer Devices (" + Singleton.getInstance().getMovingCloserDeviceListSize() + ")");
+		mListDataHeader.add("Moving Farther Device (" + Singleton.getInstance().getMovingFartherDeviceListSize() + ")");
+		mListDataHeader.add("Dissappearing Devices (" + Singleton.getInstance().getDissappearingDeviceListSize() + ")");
+
+		mListDataChild = new HashMap<String, List<String>>();
+		mListDataChild.put(mListDataHeader.get(0), Singleton.getInstance().getDevicesAvailableAsStringList());
+		mListDataChild.put(mListDataHeader.get(1), Singleton.getInstance().getDevicesNewAsStringList());
+		mListDataChild.put(mListDataHeader.get(2), Singleton.getInstance().getDevicesUpdatedAsStringList());
+		mListDataChild.put(mListDataHeader.get(3), Singleton.getInstance().getDevicesMovingCloserAsStringList());
+		mListDataChild.put(mListDataHeader.get(4), Singleton.getInstance().getDevicesMovingFartherAsStringList());
+		mListDataChild.put(mListDataHeader.get(5), Singleton.getInstance().getDevicesDissappearingAsStringList());
+
+		mListAdapter = new MyExpandableListAdapter(this, mListDataHeader, mListDataChild);
+		Logger.d(TAG, "Setting Adapter");
+		mExpandableListView.setAdapter(mListAdapter);
 	}
 
 }
