@@ -15,9 +15,11 @@ import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.OnChildClickListener;
+import android.widget.Switch;
 
 import com.github.johnpersano.supertoasts.SuperActivityToast;
 import com.michaelfotiadis.ibeaconscanner.R;
@@ -31,7 +33,7 @@ import com.michaelfotiadis.ibeaconscanner.utils.BluetoothUtils;
 import com.michaelfotiadis.ibeaconscanner.utils.Logger;
 import com.michaelfotiadis.ibeaconscanner.utils.ToastUtils;
 
-public class MainActivity extends FragmentActivity implements OnChildClickListener {
+public class MainActivity extends FragmentActivity implements OnChildClickListener, OnCheckedChangeListener {
 
 	public class ResponseReceiver extends BroadcastReceiver {
 		private String TAG = "Response Receiver";
@@ -45,7 +47,6 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 				isScanRunning = true;
 				isToastScanningNowShown = true;
 				mSuperActivityToast = ToastUtils.makeProgressToast(MainActivity.this, mSuperActivityToast, mToastStringScanningNow);
-				mButton.setText(getResources().getString(R.string.label_stop_scanning));
 
 			} else if (intent.getAction().equalsIgnoreCase(
 					CustomConstants.Broadcasts.BROADCAST_2.getString())) {
@@ -62,8 +63,6 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 
 	private BluetoothUtils mBluetoothUtils;
 
-	private Button mButton;
-
 	private ExpandableListView mExpandableListView;
 	private CharSequence mTextViewContents;
 
@@ -78,7 +77,7 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 	private SuperActivityToast mSuperActivityToast;
 
 	private final String mToastStringScanningNow = "Scanning...";
-	private final String mToastStringScanFinished = "Scan finished";
+	private final String mToastStringScanFinished = "Scan Finished";
 	private final String mToastStringEnableLE = "Waiting for Bluetooth adapter...";
 	private final String mToastStringNoLE = "Device does not support Bluetooth LE";
 	private final String mToastStringScanInterrupted = "Scan Interrupted";
@@ -124,29 +123,13 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		}
 		return false;
 	}
-	public void onClickStartScanning(View view) {
-		Logger.d(TAG, "Click on Scan Button");
-		SuperActivityToast.cancelAllSuperActivityToasts();
-
-		if (isScanRunning) {
-			// Cancels the alarms if the scan is already running
-			new ScanProcess().cancelService(this);
-			isToastScanningNowShown = false;
-			mSuperActivityToast = ToastUtils.makeInfoToast(this, mToastStringScanInterrupted);
-			mButton.setText(getResources().getString(R.string.label_start_scanning));
-			isScanRunning = false;
-		} else {
-			// This ScanProcess will also cancel all alarms on continuation
-			new ScanProcess().scanForIBeacons(MainActivity.this, getScanTime(), getPauseTime());
-		}
-	}
 
 	private int getScanTime(){
 		String result = mSharedPrefs.getString(
 				getString(R.string.pref_scantime), 
 				String.valueOf(getResources().getInteger(R.integer.default_scantime)));
 		return Integer.parseInt(result);
-		
+
 	}
 
 	private int getPauseTime(){
@@ -175,10 +158,9 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 			isToastStoppingScanShown  = savedInstanceState.getBoolean(CustomConstants.Payloads.PAYLOAD_5.toString(), false);
 		}
 
-		mButton = (Button) findViewById(R.id.buttonStartScanningMain);
-
+		// initialise Bluetooth utilities
 		mBluetoothUtils = new BluetoothUtils(this);
-
+		
 		// monitor the singleton
 		registerMonitorTask();
 
@@ -187,9 +169,23 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		SuperActivityToast.cancelAllSuperActivityToasts();
 	}
 
+	MenuItem mMenuItem;
+	
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		MenuItem switchMenuItem = menu.getItem(0);
+		Switch tb = (Switch) switchMenuItem.getActionView().findViewById(R.id.switchForActionBar);
+		tb.setChecked(isScanRunning);
+		tb.setOnCheckedChangeListener(this);
+		
+		return super.onPrepareOptionsMenu(menu);
+	}
+	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.main, menu);
+
+	
 		return super.onCreateOptionsMenu(menu);
 	}
 
@@ -202,6 +198,22 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 			break;
 		}
 		return true;
+	}
+
+	public void serviceToggle() {
+		Logger.d(TAG, "Click on Scan Button");
+		SuperActivityToast.cancelAllSuperActivityToasts();
+
+		if (isScanRunning) {
+			// Cancels the alarms if the scan is already running
+			new ScanProcess().cancelService(this);
+			isToastScanningNowShown = false;
+			mSuperActivityToast = ToastUtils.makeInfoToast(this, mToastStringScanInterrupted);
+			isScanRunning = false;
+		} else {
+			// This ScanProcess will also cancel all alarms on continuation
+			new ScanProcess().scanForIBeacons(MainActivity.this, getScanTime(), getPauseTime());
+		}
 	}
 
 	private static final int RESULT_SETTINGS = 1;
@@ -236,7 +248,7 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 
 		if (!mBluetoothUtils.isBluetoothLeSupported()) {
 			mSuperActivityToast = ToastUtils.makeWarningToast(this, mToastStringNoLE );
-			mButton.setEnabled(false);
+//			mButton.setEnabled(false);
 		} else {
 			if (!mBluetoothUtils.isBluetoothOn()) {
 				new ScanProcess().cancelService(this);
@@ -247,6 +259,7 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 				Logger.i(TAG, "Bluetooth has been activated");
 				if (isScanRunning) {
 					Logger.d(TAG, "Restarting Scan Service");
+//					mButton.setChecked(isScanRunning);
 					new ScanProcess().scanForIBeacons(MainActivity.this, getScanTime(), getPauseTime());
 				} 
 
@@ -338,6 +351,11 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		mListAdapter = new MyExpandableListAdapter(this, mListDataHeader, mListDataChild);
 		Logger.d(TAG, "Setting Adapter");
 		mExpandableListView.setAdapter(mListAdapter);
+	}
+	@Override
+	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+		Logger.d(TAG, "onCheckedStateListener");
+		serviceToggle();
 	}
 
 }

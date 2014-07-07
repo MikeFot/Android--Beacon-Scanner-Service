@@ -4,27 +4,16 @@
     android:layout_height="match_parent"
     android:paddingBottom="@dimen/activity_vertical_margin"
     android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin" >
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin" >
 
     <ExpandableListView
         android:id="@+id/listViewResults"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/buttonStartScanningMain"
         android:layout_alignParentTop="true"
         android:longClickable="false" >
 
     </ExpandableListView>
-
-    <Button
-        android:id="@+id/buttonStartScanningMain"
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:onClick="onClickStartScanning"
-        android:background="@color/white"
-        android:textColor="@color/dark_gray"
-        android:text="@string/label_start_scanning" />
 
 </RelativeLayout>

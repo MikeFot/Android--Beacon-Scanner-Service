@@ -152,10 +152,10 @@ public class ScanService  extends Service {
 		AlarmManager alarm = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 
 		if (mGapDuration > 0) {
-			Logger.e(TAG, "Scheduling Next Run");
+			Logger.i(TAG, "Scheduling Next Run");
 			alarm.set(AlarmManager.RTC_WAKEUP, Calendar.getInstance().getTimeInMillis() + mScanDuration 
 					+ mGapDuration, pengindIntent);
-			Logger.e(TAG, "Next scan will occur in " + mScanDuration + mGapDuration 
+			Logger.i(TAG, "Next scan will occur in " + mScanDuration + mGapDuration 
 					+ " at " + Calendar.getInstance().getTimeInMillis() + mScanDuration 
 					+ mGapDuration);
 		}

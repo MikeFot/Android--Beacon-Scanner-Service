@@ -13,12 +13,21 @@ public class ScanPreferencesActivity extends PreferenceActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		 addPreferencesFromResource(R.xml.settings);
-		 
-		 EditTextPreference prefScanTime = (EditTextPreference) findPreference(getString(R.string.pref_scantime));
-		 prefScanTime.getEditText().setInputType(InputType.TYPE_CLASS_NUMBER);
-		 
-		 EditTextPreference prefPauseTime = (EditTextPreference) findPreference(getString(R.string.pref_pausetime));
-		 prefPauseTime.getEditText().setInputType(InputType.TYPE_CLASS_NUMBER);
+		addPreferencesFromResource(R.xml.settings);
+
+		EditTextPreference prefScanTime = (EditTextPreference) findPreference(getString(R.string.pref_scantime));
+		prefScanTime.getEditText().setInputType(InputType.TYPE_CLASS_NUMBER);
+
+		EditTextPreference prefPauseTime = (EditTextPreference) findPreference(getString(R.string.pref_pausetime));
+		prefPauseTime.getEditText().setInputType(InputType.TYPE_CLASS_NUMBER);
+
+		// set action bar event
+		getActionBar().setHomeButtonEnabled(true);
+		getActionBar().setDisplayShowHomeEnabled(true);
+		getActionBar().setDisplayHomeAsUpEnabled(true);
+
 	}
+
+
+
 }

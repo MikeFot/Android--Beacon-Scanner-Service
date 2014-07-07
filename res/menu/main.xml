@@ -3,8 +3,14 @@
     tools:context="com.example.ibeaconscanner.MainActivity" >
 
     <item
+        android:id="@+id/action_toggle"
+        android:actionLayout="@layout/switch_layout"
+        android:showAsAction="always"  
+        android:title=""/>
+    
+    <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"
         android:title="@string/action_settings"/>
-
+    
 </menu>
