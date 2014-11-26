@@ -19,3 +19,5 @@ The Main Activity is currently providing a simple visualisation of results.
 
 ##Play Store Project
 https://play.google.com/store/apps/details?id=com.michaelfotiadis.ibeaconscanner
+
+The code in this project is licensed under the Apache Software License 2.0.
