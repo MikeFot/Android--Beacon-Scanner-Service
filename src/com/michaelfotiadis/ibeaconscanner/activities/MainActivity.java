@@ -90,6 +90,24 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 	List<String> mListDataHeader;
 
 	HashMap<String, List<String>> mListDataChild;
+	MenuItem mMenuItem;
+	private static final int RESULT_SETTINGS = 1;
+
+	private int getPauseTime(){
+		String result =  mSharedPrefs.getString(
+				getString(R.string.pref_pausetime), 
+				String.valueOf(getResources().getInteger(R.integer.default_pausetime)));
+		return Integer.parseInt(result);
+	}
+
+	private int getScanTime(){
+		String result = mSharedPrefs.getString(
+				getString(R.string.pref_scantime), 
+				String.valueOf(getResources().getInteger(R.integer.default_scantime)));
+		return Integer.parseInt(result);
+
+	}
+
 	private void notifyDataChanged() {
 
 		runOnUiThread(new Runnable() {
@@ -101,6 +119,13 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 			}
 		});
 	}
+
+	@Override
+	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+		Logger.d(TAG, "onCheckedStateListener");
+		serviceToggle();
+	}
+	
 	@Override
 	public boolean onChildClick(ExpandableListView parent, View v,
 			int groupPosition, int childPosition, long id) {
@@ -123,22 +148,7 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		}
 		return false;
 	}
-
-	private int getScanTime(){
-		String result = mSharedPrefs.getString(
-				getString(R.string.pref_scantime), 
-				String.valueOf(getResources().getInteger(R.integer.default_scantime)));
-		return Integer.parseInt(result);
-
-	}
-
-	private int getPauseTime(){
-		String result =  mSharedPrefs.getString(
-				getString(R.string.pref_pausetime), 
-				String.valueOf(getResources().getInteger(R.integer.default_pausetime)));
-		return Integer.parseInt(result);
-	}
-
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -169,59 +179,10 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		SuperActivityToast.cancelAllSuperActivityToasts();
 	}
 
-	MenuItem mMenuItem;
-	
-	@Override
-	public boolean onPrepareOptionsMenu(Menu menu) {
-		MenuItem switchMenuItem = menu.getItem(0);
-		Switch tb = (Switch) switchMenuItem.getActionView().findViewById(R.id.switchForActionBar);
-		tb.setChecked(isScanRunning);
-		tb.setOnCheckedChangeListener(this);
-		
-		return super.onPrepareOptionsMenu(menu);
-	}
-	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.main, menu);
-
-	
 		return super.onCreateOptionsMenu(menu);
-	}
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		// same as using a normal menu
-		switch (item.getItemId()) {
-		case R.id.action_settings:
-			startPreferencesActivity();
-			break;
-		}
-		return true;
-	}
-
-	public void serviceToggle() {
-		Logger.d(TAG, "Click on Scan Button");
-		SuperActivityToast.cancelAllSuperActivityToasts();
-
-		if (isScanRunning) {
-			// Cancels the alarms if the scan is already running
-			new ScanProcess().cancelService(this);
-			isToastScanningNowShown = false;
-			mSuperActivityToast = ToastUtils.makeInfoToast(this, mToastStringScanInterrupted);
-			isScanRunning = false;
-		} else {
-			// This ScanProcess will also cancel all alarms on continuation
-			new ScanProcess().scanForIBeacons(MainActivity.this, getScanTime(), getPauseTime());
-		}
-	}
-
-	private static final int RESULT_SETTINGS = 1;
-
-	private void startPreferencesActivity() {
-		Logger.d(TAG, "Starting Settings Activity");
-		Intent intent = new Intent(this, ScanPreferencesActivity.class);
-		startActivityForResult(intent, RESULT_SETTINGS);
 	}
 
 	@Override
@@ -231,6 +192,18 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		super.onDestroy();
 	}
 
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// same as using a normal menu
+		switch (item.getItemId()) {
+		case R.id.action_settings:
+			startPreferencesActivity();
+			break;
+		default:
+			break;
+		}
+		return true;
+	}
 
 	@Override
 	protected void onPause() {
@@ -240,6 +213,17 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		Logger.d(TAG, "App onPause");
 		super.onPause();
 	}
+
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		MenuItem switchMenuItem = menu.getItem(0);
+		Switch tb = (Switch) switchMenuItem.getActionView().findViewById(R.id.switchForActionBar);
+		tb.setChecked(isScanRunning);
+		tb.setOnCheckedChangeListener(this);
+		
+		return super.onPrepareOptionsMenu(menu);
+	}
+
 
 	@Override
 	protected void onResume() {
@@ -275,8 +259,6 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		}
 	}
 
-
-
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		outState.putCharSequence(CustomConstants.Payloads.PAYLOAD_1.toString(), mTextViewContents);
@@ -285,6 +267,8 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		outState.putBoolean(CustomConstants.Payloads.PAYLOAD_5.toString(), isToastStoppingScanShown);
 		super.onSaveInstanceState(outState);
 	}
+
+
 
 	private void registerMonitorTask() {
 		Logger.d(TAG, "Starting Monitor Task");
@@ -298,8 +282,6 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		mMonitorTask.start();
 	}
 
-
-
 	private void registerResponseReceiver() {
 		Logger.d(TAG, "Registering Response Receiver");
 		IntentFilter intentFilter = new IntentFilter();
@@ -309,6 +291,8 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		mScanReceiver = new ResponseReceiver();
 		this.registerReceiver(mScanReceiver, intentFilter);
 	}
+
+
 
 	protected void removeReceivers() {
 		try {
@@ -322,13 +306,34 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		}
 	}
 
+	public void serviceToggle() {
+		Logger.d(TAG, "Click on Scan Button");
+		SuperActivityToast.cancelAllSuperActivityToasts();
+
+		if (isScanRunning) {
+			// Cancels the alarms if the scan is already running
+			new ScanProcess().cancelService(this);
+			isToastScanningNowShown = false;
+			mSuperActivityToast = ToastUtils.makeInfoToast(this, mToastStringScanInterrupted);
+			isScanRunning = false;
+		} else {
+			// This ScanProcess will also cancel all alarms on continuation
+			new ScanProcess().scanForIBeacons(MainActivity.this, getScanTime(), getPauseTime());
+		}
+	}
+
+	private void startPreferencesActivity() {
+		Logger.d(TAG, "Starting Settings Activity");
+		Intent intent = new Intent(this, ScanPreferencesActivity.class);
+		startActivityForResult(intent, RESULT_SETTINGS);
+	}
+
 	protected void stopMonitorTask() {
 		if (mMonitorTask != null) {
 			Logger.d(TAG, "Monitor Task paused");
 			mMonitorTask.stop();
 		}
 	}
-
 	private void updateListData() {
 
 		Logger.d(TAG, "Updating List Data");
@@ -351,11 +356,6 @@ public class MainActivity extends FragmentActivity implements OnChildClickListen
 		mListAdapter = new MyExpandableListAdapter(this, mListDataHeader, mListDataChild);
 		Logger.d(TAG, "Setting Adapter");
 		mExpandableListView.setAdapter(mListAdapter);
-	}
-	@Override
-	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-		Logger.d(TAG, "onCheckedStateListener");
-		serviceToggle();
 	}
 
 }

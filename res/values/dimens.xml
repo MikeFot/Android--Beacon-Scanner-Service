@@ -9,8 +9,7 @@
          https://developer.android.com/design/patterns/navigation-drawer.html
     -->
     <dimen name="navigation_drawer_width">240dp</dimen>
-
-        <dimen name="actionbar_button_horizontal_margin">8dp</dimen>
+    <dimen name="actionbar_button_horizontal_margin">8dp</dimen>
     <dimen name="actionbar_button_vertical_margin">8dp</dimen>
-    
+
 </resources>
