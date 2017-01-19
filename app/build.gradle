@@ -63,6 +63,8 @@ dependencies {
 
     compile 'uk.co.alt236:bluetooth-le-library-android:1.0.0'
 
+    compile 'com.anthonycr.grant:permissions:1.0'
+
     compile files('libs/merge-1.0.2.jar')
     compile files('libs/sacklist-1.0.0.jar')
     compile('com.crashlytics.sdk.android:crashlytics:2.6.5@aar') {

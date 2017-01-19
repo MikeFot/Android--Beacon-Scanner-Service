@@ -1,5 +1,6 @@
 package com.michaelfotiadis.ibeaconscanner.activities;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -7,6 +8,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.SwitchCompat;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -16,6 +18,8 @@ import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.OnChildClickListener;
 
+import com.anthonycr.grant.PermissionsManager;
+import com.anthonycr.grant.PermissionsResultAction;
 import com.github.johnpersano.supertoasts.library.SuperActivityToast;
 import com.michaelfotiadis.ibeaconscanner.R;
 import com.michaelfotiadis.ibeaconscanner.adapter.ExpandableListAdapter;
@@ -52,7 +56,50 @@ public class MainActivity extends BaseActivity implements OnChildClickListener, 
 
     @Override
     public void onCheckedChanged(final CompoundButton buttonView, final boolean isChecked) {
-        serviceToggle();
+
+
+        if (!isChecked) {
+            if (mIsScanRunning) {
+                serviceToggle();
+            }
+        } else {
+
+            PermissionsManager.getInstance().requestPermissionsIfNecessaryForResult(this,
+                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, new PermissionsResultAction() {
+
+                        @Override
+                        public void onGranted() {
+
+                            if (!mBluetoothHelper.isBluetoothLeSupported()) {
+                                ToastUtils.makeWarningToast(MainActivity.this, getString(R.string.toast_no_le));
+                                buttonView.setChecked(false);
+                                return;
+                            } else {
+                                if (!mBluetoothHelper.isBluetoothOn()) {
+                                    ScanHelper.cancelService(MainActivity.this);
+                                    mBluetoothHelper.askUserToEnableBluetoothIfNeeded();
+                                    buttonView.setChecked(false);
+                                    return;
+                                }
+                            }
+
+                            serviceToggle();
+                        }
+
+                        @Override
+                        public void onDenied(final String permission) {
+                            ToastUtils.makeWarningToast(MainActivity.this, getString(R.string.toast_warning_permission_not_granted));
+                            buttonView.setChecked(false);
+                        }
+                    });
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(final int requestCode,
+                                           @NonNull final String[] permissions,
+                                           @NonNull final int[] grantResults) {
+        PermissionsManager.getInstance().notifyPermissionsChange(permissions, grantResults);
     }
 
     @Override
@@ -176,19 +223,12 @@ public class MainActivity extends BaseActivity implements OnChildClickListener, 
         super.onResume();
         SuperActivityToast.cancelAllSuperToasts();
 
-
         handleResume();
 
     }
 
     private void handleResume() {
-        if (!mBluetoothHelper.isBluetoothLeSupported()) {
-            ToastUtils.makeWarningToast(this, getString(R.string.toast_no_le));
-        } else {
-            if (!mBluetoothHelper.isBluetoothOn()) {
-                ScanHelper.cancelService(this);
-                mBluetoothHelper.askUserToEnableBluetoothIfNeeded();
-            }
+
             if (mBluetoothHelper.isBluetoothOn()
                     && mBluetoothHelper.isBluetoothLeSupported()) {
                 Logger.i(TAG, "Bluetooth has been activated");
@@ -200,13 +240,11 @@ public class MainActivity extends BaseActivity implements OnChildClickListener, 
                 if (mIsToastScanningNowShown) {
                     ToastUtils.makeProgressToast(this, getString(R.string.toast_scanning));
                 }
-
-                updateListData();
             } else {
                 SuperActivityToast.cancelAllSuperToasts();
                 ToastUtils.makeProgressToast(this, getString(R.string.toast_waiting));
             }
-        }
+        updateListData();
     }
 
     protected void removeReceivers() {

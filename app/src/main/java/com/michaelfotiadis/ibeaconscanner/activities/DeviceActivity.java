@@ -3,7 +3,7 @@ package com.michaelfotiadis.ibeaconscanner.activities;
 import android.annotation.SuppressLint;
 import android.app.ListActivity;
 import android.os.Bundle;
-import android.widget.LinearLayout;
+import android.view.View;
 import android.widget.TextView;
 
 import com.commonsware.cwac.merge.MergeAdapter;
@@ -33,7 +33,7 @@ public class DeviceActivity extends ListActivity {
 
     @SuppressLint("InflateParams")
     private void appendDeviceInfo(final MergeAdapter adapter, final BluetoothLeDevice device) {
-        final LinearLayout layout = (LinearLayout) getLayoutInflater().inflate(R.layout.list_item_view_device_info, null);
+        final View layout = getLayoutInflater().inflate(R.layout.list_item_view_device_info, null);
         final TextView textViewName = (TextView) layout.findViewById(R.id.deviceName);
         final TextView textViewAddress = (TextView) layout.findViewById(R.id.deviceAddress);
 
@@ -51,7 +51,7 @@ public class DeviceActivity extends ListActivity {
      */
     @SuppressLint("InflateParams")
     private void appendHeader(final MergeAdapter adapter, final String title) {
-        final LinearLayout layout = (LinearLayout) getLayoutInflater().inflate(R.layout.list_item_view_header, null);
+        final View layout = getLayoutInflater().inflate(R.layout.list_item_view_header, null);
         final TextView textViewTitle = (TextView) layout.findViewById(R.id.title);
         textViewTitle.setText(title);
 
@@ -66,7 +66,7 @@ public class DeviceActivity extends ListActivity {
      */
     @SuppressLint("InflateParams")
     private void appendSimpleText(final MergeAdapter adapter, final String data) {
-        final LinearLayout lt = (LinearLayout) getLayoutInflater().inflate(R.layout.list_item_view_textview, null);
+        final View lt = getLayoutInflater().inflate(R.layout.list_item_view_textview, null);
         final TextView tvData = (TextView) lt.findViewById(R.id.data);
 
         tvData.setText(data);
@@ -76,7 +76,7 @@ public class DeviceActivity extends ListActivity {
 
     @SuppressLint("InflateParams")
     private void appendIBeaconInfo(final MergeAdapter adapter, final IBeaconManufacturerData iBeaconData) {
-        final LinearLayout lt = (LinearLayout) getLayoutInflater().inflate(R.layout.list_item_view_ibeacon_details, null);
+        final View lt = getLayoutInflater().inflate(R.layout.list_item_view_ibeacon_details, null);
         final TextView tvCompanyId = (TextView) lt.findViewById(R.id.companyId);
         final TextView tvUUID = (TextView) lt.findViewById(R.id.uuid);
         final TextView tvMajor = (TextView) lt.findViewById(R.id.major);
@@ -96,7 +96,7 @@ public class DeviceActivity extends ListActivity {
 
     @SuppressLint("InflateParams")
     private void appendRssiInfo(final MergeAdapter adapter, final BluetoothLeDevice device) {
-        final LinearLayout lt = (LinearLayout) getLayoutInflater().inflate(R.layout.list_item_view_rssi_info, null);
+        final View lt = getLayoutInflater().inflate(R.layout.list_item_view_rssi_info, null);
         final TextView tvLastTimestamp = (TextView) lt.findViewById(R.id.lastTimestamp);
         final TextView tvLastRssi = (TextView) lt.findViewById(R.id.lastRssi);
 

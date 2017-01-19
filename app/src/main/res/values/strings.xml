@@ -43,5 +43,6 @@
     <string name="toast_waiting">"Waiting for Bluetooth adapter…"</string>
     <string name="toast_no_le">"Device does not support Bluetooth LE"</string>
     <string name="toast_interrupted">"Scan Interrupted"</string>
+    <string name="toast_warning_permission_not_granted">Coarse location permission not granted</string>
 
 </resources>
