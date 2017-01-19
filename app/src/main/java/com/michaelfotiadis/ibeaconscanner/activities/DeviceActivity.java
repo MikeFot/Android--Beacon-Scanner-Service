@@ -1,9 +1,9 @@
 package com.michaelfotiadis.ibeaconscanner.activities;
 
 import android.annotation.SuppressLint;
-import android.app.ListActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.commonsware.cwac.merge.MergeAdapter;
@@ -20,15 +20,28 @@ import uk.co.alt236.bluetoothlelib.device.beacon.ibeacon.IBeaconManufacturerData
 import uk.co.alt236.bluetoothlelib.resolvers.CompanyIdentifierResolver;
 
 
-public class DeviceActivity extends ListActivity {
+public class DeviceActivity extends BaseActivity {
 
     @Override
-    protected void onCreate(final Bundle savedInstanceState) {
+    public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        setDisplayHomeAsUpEnabled(true);
+
 
         final BluetoothLeDevice device = getIntent().getParcelableExtra(CustomConstants.Payloads.PAYLOAD_1.toString());
 
-        populateDetails(device);
+        setTitle(device.getName());
+
+        final ListView listView = (ListView) findViewById(R.id.list_view);
+
+        populateDetails(listView, device);
+
+    }
+
+    @Override
+    protected int getLayoutResource() {
+        return R.layout.activity_device;
     }
 
     @SuppressLint("InflateParams")
@@ -47,7 +60,7 @@ public class DeviceActivity extends ListActivity {
      * Append a header to the MergeAdapter
      *
      * @param adapter {@link MergeAdapter} to be used
-     * @param title String title to be appended
+     * @param title   String title to be appended
      */
     @SuppressLint("InflateParams")
     private void appendHeader(final MergeAdapter adapter, final String title) {
@@ -62,7 +75,7 @@ public class DeviceActivity extends ListActivity {
      * Append body text to the MergeAdapter
      *
      * @param adapter {@link MergeAdapter} to be used
-     * @param data String text to be appended
+     * @param data    String text to be appended
      */
     @SuppressLint("InflateParams")
     private void appendSimpleText(final MergeAdapter adapter, final String data) {
@@ -110,7 +123,7 @@ public class DeviceActivity extends ListActivity {
         return getString(R.string.formatter_db, String.valueOf(rssi));
     }
 
-    private void populateDetails(final BluetoothLeDevice device) {
+    private void populateDetails(final ListView listView, final BluetoothLeDevice device) {
         final MergeAdapter adapter = new MergeAdapter();
 
         if (device == null) {
@@ -130,7 +143,8 @@ public class DeviceActivity extends ListActivity {
             appendRssiInfo(adapter, device);
 
         }
-        getListView().setAdapter(adapter);
+
+        listView.setAdapter(adapter);
     }
 
     private static String formatTime(final long time) {
