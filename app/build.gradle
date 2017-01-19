@@ -1,0 +1,53 @@
+apply plugin: 'com.android.application'
+
+final def STRING = "string"
+final def BOOLEAN = "boolean"
+final def INT = "int"
+
+final String appCompatLibVersion = "25.0.1"
+
+
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "25.0.1"
+
+    defaultConfig {
+        applicationId "com.michaelfotiadis.ibeaconscanner"
+        minSdkVersion 18
+        targetSdkVersion 25
+
+        versionCode 6
+        versionName "1.2"
+
+    }
+
+    buildTypes {
+        buildTypes {
+            release
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
+            buildConfigField BOOLEAN, "DEV_MODE", "false"
+        }
+        debug {
+            minifyEnabled false
+            buildConfigField BOOLEAN, "DEV_MODE", "true"
+        }
+    }
+}
+
+
+dependencies {
+    compile "com.android.support:support-v13:$appCompatLibVersion"
+    compile "com.android.support:appcompat-v7:$appCompatLibVersion"
+    compile "com.android.support:design:$appCompatLibVersion"
+    compile "com.android.support:preference-v14:$appCompatLibVersion"
+
+    compile 'com.github.johnpersano:supertoasts:2.0'
+
+    compile 'uk.co.alt236:bluetooth-le-library-android:1.0.0'
+
+    compile files('libs/merge-1.0.2.jar')
+    compile files('libs/sacklist-1.0.0.jar')
+}

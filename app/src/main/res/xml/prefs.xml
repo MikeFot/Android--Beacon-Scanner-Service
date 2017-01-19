@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <PreferenceCategory android:title="@string/scan_settings" >
+        <com.michaelfotiadis.ibeaconscanner.fragment.CustomEditTextPreference
+            android:key="@string/pref_scantime"
+            android:defaultValue="@integer/default_scantime"
+            android:summary="%s"
+            android:inputType="numberSigned"
+            android:maxLength="9"
+            android:title="@string/scan_time" />
+
+        <com.michaelfotiadis.ibeaconscanner.fragment.CustomEditTextPreference
+            android:key="@string/pref_pausetime"
+            android:defaultValue="@integer/default_pausetime"
+            android:summary="%s"
+            android:inputType="numberSigned"
+            android:maxLength="9"
+            android:title="@string/pause_time" />
+    </PreferenceCategory>
+
+</PreferenceScreen>
