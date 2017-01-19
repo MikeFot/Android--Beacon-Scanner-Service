@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<string name="app_name">iBeacon Scanner</string>
+	<string name="action_example">Example action</string>
+	<string name="action_settings">Settings</string>
+	<string name="action_toggle">Toggle Scan</string>
+	<string name="label_start_scanning">Start Scanning</string>
+	<string name="label_stop_scanning">Stop Scanning</string>
+	<string name="label_textviewResults">No Results Yet</string>
+	<string name="title_activity_device">Device View</string>
+
+	<!-- Formatters -->
+	<string name="formatter_meters">%sm</string>
+	<string name="formatter_db">%sdb</string>
+	<string name="formatter_item_count">Items: %s</string>
+
+	<!-- MergeAdapter Labels -->
+	<string name="label_last_timestamp">Last Timestamp:</string>
+	<string name="label_last_rssi">Last RSSI:</string>
+	<string name="label_company_id">Company ID:</string>
+	<string name="label_uuid">UUID:</string>
+	<string name="label_major">Major:</string>
+	<string name="label_minor">Minor:</string>
+	<string name="labe_tx_power">TX Power:</string>
+	<string name="label_device_name">Device Name:</string>
+	<string name="label_device_address">Device Address:</string>
+
+	<!-- Preferences -->
+	<string name="menu_settings">Settings</string>
+	<string name="scan_time">Scan Time (milliseconds)</string>
+	<string name="scan_time_summary">Set Scan Time Duration</string>
+	<string name="pause_time">Pause Time (milliseconds)</string>
+	<string name="pause_time_summary">Set Time Between Scans</string>
+	<string name="scan_settings">Service Settings</string>
+	<string name="pref_scantime">scanTime</string>
+	<string name="pref_pausetime">pauseTime</string>
+	<string name="title_activity_scan_preferences">Scan Preferences</string>
+
+    <!--Toast Messages-->
+    <string name="toast_scanning">"Scanning…"</string>
+    <string name="toast_completed">"Scan Completed"</string>
+    <string name="toast_waiting">"Waiting for Bluetooth adapter…"</string>
+    <string name="toast_no_le">"Device does not support Bluetooth LE"</string>
+    <string name="toast_interrupted">"Scan Interrupted"</string>
+    <string name="toast_warning_permission_not_granted">Coarse location permission not granted</string>
+
+</resources>

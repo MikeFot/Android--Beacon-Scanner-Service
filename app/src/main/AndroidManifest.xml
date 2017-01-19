@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.michaelfotiadis.ibeaconscanner">
+
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
+
+    <application
+        android:name=".BeaconApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+        <service
+            android:name=".services.ScanService"
+            android:enabled="true"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.MainActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".activities.DeviceActivity"
+            android:parentActivityName=".activities.MainActivity" 
+            android:label="@string/title_activity_device" >
+        </activity>
+        <activity
+            android:name=".activities.ScanPreferencesActivity"
+            android:parentActivityName=".activities.MainActivity" 
+            android:label="@string/title_activity_scan_preferences" >
+        </activity>
+
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="d936fe3caf46a1a4ffc49339b09d733af6a6b6b5" />
+    </application>
+
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

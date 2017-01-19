@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:columnCount="2"
+    android:gravity="top"
+    android:paddingBottom="@dimen/padding_medium"
+    android:paddingEnd="@dimen/padding_small"
+    android:paddingLeft="@dimen/padding_small"
+    android:paddingRight="@dimen/padding_small"
+    android:paddingStart="@dimen/padding_small"
+    android:paddingTop="@dimen/padding_small"
+    android:useDefaultMargins="true">
+
+    <TextView
+        style="@style/GridLayoutTitleTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/label_company_id" />
+
+    <TextView
+        android:id="@+id/companyId"
+        style="@style/GridLayoutDataTextView" />
+
+    <TextView
+        style="@style/GridLayoutTitleTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/label_uuid" />
+
+    <TextView
+        android:id="@+id/uuid"
+        style="@style/GridLayoutDataTextView" />
+
+    <TextView
+        style="@style/GridLayoutTitleTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/label_major" />
+
+    <TextView
+        android:id="@+id/major"
+        style="@style/GridLayoutDataTextView" />
+
+    <TextView
+        style="@style/GridLayoutTitleTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/label_minor" />
+
+    <TextView
+        android:id="@+id/minor"
+        style="@style/GridLayoutDataTextView" />
+
+    <TextView
+        style="@style/GridLayoutTitleTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/labe_tx_power" />
+
+    <TextView
+        android:id="@+id/txpower"
+        style="@style/GridLayoutDataTextView" />
+</GridLayout>
