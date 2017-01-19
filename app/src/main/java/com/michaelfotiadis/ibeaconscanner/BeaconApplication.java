@@ -7,9 +7,9 @@ import com.michaelfotiadis.ibeaconscanner.utils.Logger;
 
 import io.fabric.sdk.android.Fabric;
 
-public class MyApplication extends Application {
+public class BeaconApplication extends Application {
 
-	private final String TAG = "MyApplication";
+	private final String TAG = "BeaconApplication";
 	
 
 	@Override
