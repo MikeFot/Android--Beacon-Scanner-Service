@@ -12,4 +12,9 @@
     <dimen name="actionbar_button_horizontal_margin">8dp</dimen>
     <dimen name="actionbar_button_vertical_margin">8dp</dimen>
 
+
+    <dimen name="padding_small">4dp</dimen>
+    <dimen name="padding_medium">8dp</dimen>
+    <dimen name="padding_large">16dp</dimen>
+
 </resources>

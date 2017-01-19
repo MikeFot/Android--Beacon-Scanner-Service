@@ -3,7 +3,12 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:gravity="top"
-    android:padding="4dp"
+    android:paddingTop="@dimen/padding_small"
+    android:paddingBottom="@dimen/padding_medium"
+    android:paddingLeft="@dimen/padding_small"
+    android:paddingStart="@dimen/padding_small"
+    android:paddingRight="@dimen/padding_small"
+    android:paddingEnd="@dimen/padding_small"
     android:orientation="vertical">
 
     <TextView
@@ -14,10 +19,5 @@
         android:textColor="@android:color/holo_blue_dark"
         android:textSize="14sp"
         android:textStyle="bold" />
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@android:color/holo_blue_dark" />
 
 </LinearLayout>

@@ -37,4 +37,11 @@
 	<string name="pref_pausetime">pauseTime</string>
 	<string name="title_activity_scan_preferences">Scan Preferences</string>
 
+    <!--Toast Messages-->
+    <string name="toast_scanning">"Scanning…"</string>
+    <string name="toast_completed">"Scan Completed"</string>
+    <string name="toast_waiting">"Waiting for Bluetooth adapter…"</string>
+    <string name="toast_no_le">"Device does not support Bluetooth LE"</string>
+    <string name="toast_interrupted">"Scan Interrupted"</string>
+
 </resources>

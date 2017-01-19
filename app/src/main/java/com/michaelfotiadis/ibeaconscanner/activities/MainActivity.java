@@ -21,10 +21,10 @@ import com.michaelfotiadis.ibeaconscanner.R;
 import com.michaelfotiadis.ibeaconscanner.adapter.ExpandableListAdapter;
 import com.michaelfotiadis.ibeaconscanner.containers.CustomConstants;
 import com.michaelfotiadis.ibeaconscanner.datastore.Singleton;
-import com.michaelfotiadis.ibeaconscanner.processes.ScanProcess;
+import com.michaelfotiadis.ibeaconscanner.processes.ScanHelper;
 import com.michaelfotiadis.ibeaconscanner.tasks.MonitorTask;
 import com.michaelfotiadis.ibeaconscanner.tasks.MonitorTask.OnBeaconDataChangedListener;
-import com.michaelfotiadis.ibeaconscanner.utils.BluetoothUtils;
+import com.michaelfotiadis.ibeaconscanner.utils.BluetoothHelper;
 import com.michaelfotiadis.ibeaconscanner.utils.Logger;
 import com.michaelfotiadis.ibeaconscanner.utils.ToastUtils;
 
@@ -35,75 +35,63 @@ import java.util.List;
 public class MainActivity extends BaseActivity implements OnChildClickListener, OnCheckedChangeListener {
 
     private static final int RESULT_SETTINGS = 1;
-    private final String TAG = this.toString();
-    private final String mToastStringScanningNow = "Scanning...";
-    private final String mToastStringScanFinished = "Scan Finished";
-    private final String mToastStringEnableLE = "Waiting for Bluetooth adapter...";
-    private final String mToastStringNoLE = "Device does not support Bluetooth LE";
-    private final String mToastStringScanInterrupted = "Scan Interrupted";
+    private final String TAG = MainActivity.class.getSimpleName();
     ExpandableListAdapter mListAdapter;
     List<String> mListDataHeader;
     HashMap<String, List<String>> mListDataChild;
-    private BluetoothUtils mBluetoothUtils;
+    private BluetoothHelper mBluetoothHelper;
     private ExpandableListView mExpandableListView;
     private CharSequence mTextViewContents;
     private MonitorTask mMonitorTask;
     // Receivers
     private ResponseReceiver mScanReceiver;
     private SharedPreferences mSharedPrefs;
-    private boolean isScanRunning = false;
-    private boolean isToastScanningNowShown;
-    private boolean isToastStoppingScanShown;
+    private boolean mIsScanRunning = false;
+    private boolean mIsToastScanningNowShown;
+    private boolean mIsToastStoppingScanShown;
 
     @Override
-    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        Logger.d(TAG, "onCheckedStateListener");
+    public void onCheckedChanged(final CompoundButton buttonView, final boolean isChecked) {
         serviceToggle();
     }
 
     @Override
-    public boolean onChildClick(ExpandableListView parent, View v,
-                                int groupPosition, int childPosition, long id) {
+    public boolean onChildClick(final ExpandableListView parent, final View v,
+                                final int groupPosition, final int childPosition, final long id) {
 
-        try {
-            Logger.d(TAG, "Size of Data Child List " + mListDataChild.values().size());
-            Logger.d(TAG, "Group Position : " + groupPosition);
-            Logger.d(TAG, "Child Position : " + childPosition);
-
-            String address = mListDataChild.get(mListDataHeader.get(groupPosition)).get(childPosition);
-            Logger.d(TAG, "Starting Display Activity for address " + address);
-
-            Intent intent = new Intent(this, DeviceActivity.class);
-            intent.putExtra(CustomConstants.Payloads.PAYLOAD_1.toString(),
+        if (mListDataChild != null) {
+            final String address = mListDataChild.get(mListDataHeader.get(groupPosition)).get(childPosition);
+            final Intent intent = new Intent(this, DeviceActivity.class);
+            intent.putExtra(
+                    CustomConstants.Payloads.PAYLOAD_1.toString(),
                     Singleton.getInstance().getBluetoothLeDeviceForAddress(address));
             startActivity(intent);
-        } catch (Exception e) {
-            Logger.e(TAG, "Null Data Child List " + e.getLocalizedMessage());
-            e.printStackTrace();
+            return true;
+        } else {
+            return false;
         }
-        return false;
+
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setTitle(getString(R.string.app_name));
 
         mExpandableListView = (ExpandableListView) findViewById(R.id.listViewResults);
         mExpandableListView.setOnChildClickListener(this);
-        mSharedPrefs = PreferenceManager
-                .getDefaultSharedPreferences(this);
+        mSharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
 
         if (savedInstanceState != null) {
             mTextViewContents = savedInstanceState.getCharSequence(CustomConstants.Payloads.PAYLOAD_1.toString());
-            isScanRunning = savedInstanceState.getBoolean(CustomConstants.Payloads.PAYLOAD_2.toString(), false);
-            isToastScanningNowShown = savedInstanceState.getBoolean(CustomConstants.Payloads.PAYLOAD_4.toString(), false);
-            isToastStoppingScanShown = savedInstanceState.getBoolean(CustomConstants.Payloads.PAYLOAD_5.toString(), false);
+            mIsScanRunning = savedInstanceState.getBoolean(CustomConstants.Payloads.PAYLOAD_2.toString(), false);
+            mIsToastScanningNowShown = savedInstanceState.getBoolean(CustomConstants.Payloads.PAYLOAD_4.toString(), false);
+            mIsToastStoppingScanShown = savedInstanceState.getBoolean(CustomConstants.Payloads.PAYLOAD_5.toString(), false);
         }
 
         // initialise Bluetooth utilities
-        mBluetoothUtils = new BluetoothUtils(this);
+        mBluetoothHelper = new BluetoothHelper(this);
 
         // monitor the singleton
         registerMonitorTask();
@@ -119,20 +107,20 @@ public class MainActivity extends BaseActivity implements OnChildClickListener, 
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(final Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
 
-        View layout = menu.findItem(R.id.action_toggle).getActionView();
-        SwitchCompat tb = (SwitchCompat) layout.findViewById(R.id.switchForActionBar);
+        final View layout = menu.findItem(R.id.action_toggle).getActionView();
+        final SwitchCompat toggle = (SwitchCompat) layout.findViewById(R.id.switchForActionBar);
 
-        tb.setChecked(isScanRunning);
-        tb.setOnCheckedChangeListener(this);
+        toggle.setChecked(mIsScanRunning);
+        toggle.setOnCheckedChangeListener(this);
 
         return true;
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected(final MenuItem item) {
         // same as using a normal menu
         switch (item.getItemId()) {
             case R.id.action_settings:
@@ -145,34 +133,33 @@ public class MainActivity extends BaseActivity implements OnChildClickListener, 
     }
 
     public void serviceToggle() {
-        Logger.d(TAG, "Click on Scan Button");
         SuperActivityToast.cancelAllSuperToasts();
 
-        if (isScanRunning) {
+        if (mIsScanRunning) {
             // Cancels the alarms if the scan is already running
-            new ScanProcess().cancelService(this);
-            isToastScanningNowShown = false;
-            ToastUtils.makeInfoToast(this, mToastStringScanInterrupted);
-            isScanRunning = false;
+            ScanHelper.cancelService(this);
+            mIsToastScanningNowShown = false;
+            ToastUtils.makeInfoToast(this, getString(R.string.toast_interrupted));
+            mIsScanRunning = false;
         } else {
-            // This ScanProcess will also cancel all alarms on continuation
-            new ScanProcess().scanForIBeacons(MainActivity.this, getScanTime(), getPauseTime());
+            // This ScanHelper will also cancel all alarms on continuation
+            ScanHelper.scanForIBeacons(MainActivity.this, getScanTime(), getPauseTime());
         }
     }
 
     @Override
     protected void onDestroy() {
         removeReceivers();
-        Logger.d(TAG, "App onDestroy");
         super.onDestroy();
     }
 
+
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(final Bundle outState) {
         outState.putCharSequence(CustomConstants.Payloads.PAYLOAD_1.toString(), mTextViewContents);
-        outState.putBoolean(CustomConstants.Payloads.PAYLOAD_2.toString(), isScanRunning);
-        outState.putBoolean(CustomConstants.Payloads.PAYLOAD_4.toString(), isToastScanningNowShown);
-        outState.putBoolean(CustomConstants.Payloads.PAYLOAD_5.toString(), isToastStoppingScanShown);
+        outState.putBoolean(CustomConstants.Payloads.PAYLOAD_2.toString(), mIsScanRunning);
+        outState.putBoolean(CustomConstants.Payloads.PAYLOAD_4.toString(), mIsToastScanningNowShown);
+        outState.putBoolean(CustomConstants.Payloads.PAYLOAD_5.toString(), mIsToastStoppingScanShown);
         super.onSaveInstanceState(outState);
     }
 
@@ -180,8 +167,7 @@ public class MainActivity extends BaseActivity implements OnChildClickListener, 
     protected void onPause() {
         // Cancel the alarm
         SuperActivityToast.cancelAllSuperToasts();
-        new ScanProcess().cancelService(this);
-        Logger.d(TAG, "App onPause");
+        ScanHelper.cancelService(this);
         super.onPause();
     }
 
@@ -190,31 +176,35 @@ public class MainActivity extends BaseActivity implements OnChildClickListener, 
         super.onResume();
         SuperActivityToast.cancelAllSuperToasts();
 
-        if (!mBluetoothUtils.isBluetoothLeSupported()) {
-            ToastUtils.makeWarningToast(this, mToastStringNoLE);
-//			mButton.setEnabled(false);
+
+        handleResume();
+
+    }
+
+    private void handleResume() {
+        if (!mBluetoothHelper.isBluetoothLeSupported()) {
+            ToastUtils.makeWarningToast(this, getString(R.string.toast_no_le));
         } else {
-            if (!mBluetoothUtils.isBluetoothOn()) {
-                new ScanProcess().cancelService(this);
-                mBluetoothUtils.askUserToEnableBluetoothIfNeeded();
+            if (!mBluetoothHelper.isBluetoothOn()) {
+                ScanHelper.cancelService(this);
+                mBluetoothHelper.askUserToEnableBluetoothIfNeeded();
             }
-            if (mBluetoothUtils.isBluetoothOn()
-                    && mBluetoothUtils.isBluetoothLeSupported()) {
+            if (mBluetoothHelper.isBluetoothOn()
+                    && mBluetoothHelper.isBluetoothLeSupported()) {
                 Logger.i(TAG, "Bluetooth has been activated");
-                if (isScanRunning) {
+                if (mIsScanRunning) {
                     Logger.d(TAG, "Restarting Scan Service");
-//					mButton.setChecked(isScanRunning);
-                    new ScanProcess().scanForIBeacons(MainActivity.this, getScanTime(), getPauseTime());
+                    ScanHelper.scanForIBeacons(MainActivity.this, getScanTime(), getPauseTime());
                 }
 
-                if (isToastScanningNowShown) {
-                    ToastUtils.makeProgressToast(this, mToastStringScanningNow);
+                if (mIsToastScanningNowShown) {
+                    ToastUtils.makeProgressToast(this, getString(R.string.toast_scanning));
                 }
 
                 updateListData();
             } else {
                 SuperActivityToast.cancelAllSuperToasts();
-                ToastUtils.makeProgressToast(this, mToastStringEnableLE);
+                ToastUtils.makeProgressToast(this, getString(R.string.toast_waiting));
             }
         }
     }
@@ -223,7 +213,7 @@ public class MainActivity extends BaseActivity implements OnChildClickListener, 
         try {
             this.unregisterReceiver(mScanReceiver);
             Logger.d(TAG, "Scan Receiver Unregistered Successfully");
-        } catch (Exception e) {
+        } catch (final Exception e) {
             Logger.d(
                     TAG,
                     "Scan Receiver Already Unregistered. Exception : "
@@ -239,14 +229,14 @@ public class MainActivity extends BaseActivity implements OnChildClickListener, 
     }
 
     private int getPauseTime() {
-        String result = mSharedPrefs.getString(
+        final String result = mSharedPrefs.getString(
                 getString(R.string.pref_pausetime),
                 String.valueOf(getResources().getInteger(R.integer.default_pausetime)));
         return Integer.parseInt(result);
     }
 
     private int getScanTime() {
-        String result = mSharedPrefs.getString(
+        final String result = mSharedPrefs.getString(
                 getString(R.string.pref_scantime),
                 String.valueOf(getResources().getInteger(R.integer.default_scantime)));
         return Integer.parseInt(result);
@@ -279,7 +269,7 @@ public class MainActivity extends BaseActivity implements OnChildClickListener, 
 
     private void registerResponseReceiver() {
         Logger.d(TAG, "Registering Response Receiver");
-        IntentFilter intentFilter = new IntentFilter();
+        final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(CustomConstants.Broadcasts.BROADCAST_1.getString());
         intentFilter.addAction(CustomConstants.Broadcasts.BROADCAST_2.getString());
 
@@ -289,20 +279,20 @@ public class MainActivity extends BaseActivity implements OnChildClickListener, 
 
     private void startPreferencesActivity() {
         Logger.d(TAG, "Starting Settings Activity");
-        Intent intent = new Intent(this, ScanPreferencesActivity.class);
+        final Intent intent = new Intent(this, ScanPreferencesActivity.class);
         startActivityForResult(intent, RESULT_SETTINGS);
     }
 
     private void updateListData() {
 
         Logger.d(TAG, "Updating List Data");
-        mListDataHeader = new ArrayList<String>();
+        mListDataHeader = new ArrayList<>();
         mListDataHeader.add("Available Devices (" + Singleton.getInstance().getAvailableDeviceListSize() + ")");
         mListDataHeader.add("New Devices (" + Singleton.getInstance().getNewDeviceListSize() + ")");
         mListDataHeader.add("Updated Devices (" + Singleton.getInstance().getUpdatedDeviceListSize() + ")");
         mListDataHeader.add("Moving Closer Devices (" + Singleton.getInstance().getMovingCloserDeviceListSize() + ")");
         mListDataHeader.add("Moving Farther Device (" + Singleton.getInstance().getMovingFartherDeviceListSize() + ")");
-        mListDataHeader.add("Dissappearing Devices (" + Singleton.getInstance().getDissappearingDeviceListSize() + ")");
+        mListDataHeader.add("Disappearing Devices (" + Singleton.getInstance().getDisappearingDeviceListSize() + ")");
 
         mListDataChild = new HashMap<>();
         mListDataChild.put(mListDataHeader.get(0), Singleton.getInstance().getDevicesAvailableAsStringList());
@@ -310,7 +300,7 @@ public class MainActivity extends BaseActivity implements OnChildClickListener, 
         mListDataChild.put(mListDataHeader.get(2), Singleton.getInstance().getDevicesUpdatedAsStringList());
         mListDataChild.put(mListDataHeader.get(3), Singleton.getInstance().getDevicesMovingCloserAsStringList());
         mListDataChild.put(mListDataHeader.get(4), Singleton.getInstance().getDevicesMovingFartherAsStringList());
-        mListDataChild.put(mListDataHeader.get(5), Singleton.getInstance().getDevicesDissappearingAsStringList());
+        mListDataChild.put(mListDataHeader.get(5), Singleton.getInstance().getDevicesDisappearingAsStringList());
 
         mListAdapter = new ExpandableListAdapter(this, mListDataHeader, mListDataChild);
         Logger.d(TAG, "Setting Adapter");
@@ -318,26 +308,26 @@ public class MainActivity extends BaseActivity implements OnChildClickListener, 
     }
 
     public class ResponseReceiver extends BroadcastReceiver {
-        private String TAG = "Response Receiver";
+        private final String TAG = ResponseReceiver.class.getSimpleName();
 
         @Override
-        public void onReceive(Context context, Intent intent) {
+        public void onReceive(final Context context, final Intent intent) {
             Logger.d(TAG, "On Receiver Result");
             if (intent.getAction().equalsIgnoreCase(
                     CustomConstants.Broadcasts.BROADCAST_1.getString())) {
                 Logger.i(TAG, "Scan Running");
                 SuperActivityToast.cancelAllSuperToasts();
-                isScanRunning = true;
-                isToastScanningNowShown = true;
-                ToastUtils.makeProgressToast(MainActivity.this, mToastStringScanningNow);
+                mIsScanRunning = true;
+                mIsToastScanningNowShown = true;
+                ToastUtils.makeProgressToast(MainActivity.this, getString(R.string.toast_scanning));
 
             } else if (intent.getAction().equalsIgnoreCase(
                     CustomConstants.Broadcasts.BROADCAST_2.getString())) {
                 Logger.i(TAG, "Service Finished");
                 SuperActivityToast.cancelAllSuperToasts();
-                isToastScanningNowShown = false;
+                mIsToastScanningNowShown = false;
                 //				isToastStoppingScanShown = false;
-                ToastUtils.makeInfoToast(MainActivity.this, mToastStringScanFinished);
+                ToastUtils.makeInfoToast(MainActivity.this, getString(R.string.toast_completed));
             }
         }
     }

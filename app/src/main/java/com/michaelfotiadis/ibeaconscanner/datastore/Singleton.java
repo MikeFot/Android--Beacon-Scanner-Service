@@ -17,74 +17,52 @@ import uk.co.alt236.bluetoothlelib.device.beacon.ibeacon.IBeaconDevice;
  * @author Michael Fotiadis
  * @since 24/06/2014
  */
+@SuppressWarnings("ClassWithOnlyPrivateConstructors")
 public class Singleton {
 
-    private static volatile Singleton _instance = null;
+    private static final String TAG = Singleton.class.getSimpleName();
+    private static volatile Singleton sInstance = null;
 
-    private ConcurrentHashMap<String, BluetoothLeDevice> mDeviceMap;
-    private ConcurrentHashMap<String, BluetoothLeDevice> mAvailableDevicesList;
-    private ConcurrentHashMap<String, BluetoothLeDevice> mUpdatedDevicesList;
-    private ConcurrentHashMap<String, BluetoothLeDevice> mNewDevicesList;
-    private ConcurrentHashMap<String, BluetoothLeDevice> mMovingCloserDevicesList;
-    private ConcurrentHashMap<String, BluetoothLeDevice> mMovingFartherDevicesList;
-    private ConcurrentHashMap<String, BluetoothLeDevice> mDissapearingDevicesList;
+    private final ConcurrentHashMap<String, BluetoothLeDevice> mDeviceMap;
+    private final ConcurrentHashMap<String, BluetoothLeDevice> mAvailableDevicesList;
+    private final ConcurrentHashMap<String, BluetoothLeDevice> mUpdatedDevicesList;
+    private final ConcurrentHashMap<String, BluetoothLeDevice> mNewDevicesList;
+    private final ConcurrentHashMap<String, BluetoothLeDevice> mMovingCloserDevicesList;
+    private final ConcurrentHashMap<String, BluetoothLeDevice> mMovingFartherDevicesList;
+    private final ConcurrentHashMap<String, BluetoothLeDevice> mDisappearingDevicesList;
 
-    private int mNumberOfScans;
-
+    private int mNumberOfScans = 0;
     private long mTimeOfLastUpdate = 0;
+
+    /**
+     * Singleton Constructor
+     */
+    private Singleton() {
+
+        mDeviceMap = new ConcurrentHashMap<>();
+        mAvailableDevicesList = new ConcurrentHashMap<>();
+
+        mNewDevicesList = new ConcurrentHashMap<>();
+        mUpdatedDevicesList = new ConcurrentHashMap<>();
+
+        mMovingFartherDevicesList = new ConcurrentHashMap<>();
+        mMovingCloserDevicesList = new ConcurrentHashMap<>();
+
+        mDisappearingDevicesList = new ConcurrentHashMap<>();
+
+    }
 
     public int getNumberOfScans() {
         return mNumberOfScans;
     }
 
-    public void setNumberOfScans(int mNumberOfScans) {
+    public void setNumberOfScans(final int mNumberOfScans) {
         this.mNumberOfScans = mNumberOfScans;
     }
 
-    private final String TAG = "Singleton";
+    public BluetoothLeDevice getBluetoothLeDeviceForAddress(final String address) {
 
-    /**
-     * @return Instance of the Singleton
-     */
-    public static Singleton getInstance() {
-        if (_instance == null) {
-            synchronized (Singleton.class) {
-                if (_instance == null) {
-                    _instance = new Singleton();
-                }
-            }
-        }
-        return _instance;
-    }
-
-    /**
-     * @param instance Sets the Instance of the Singleton
-     */
-    public static void setInstance(Singleton instance) {
-        Singleton._instance = instance;
-    }
-
-    /**
-     * Singleton Constructor
-     */
-    public Singleton() {
-        mDeviceMap = new ConcurrentHashMap<String, BluetoothLeDevice>();
-        mAvailableDevicesList = new ConcurrentHashMap<String, BluetoothLeDevice>();
-
-        mNewDevicesList = new ConcurrentHashMap<String, BluetoothLeDevice>();
-        mUpdatedDevicesList = new ConcurrentHashMap<String, BluetoothLeDevice>();
-
-        mMovingFartherDevicesList = new ConcurrentHashMap<String, BluetoothLeDevice>();
-        mMovingCloserDevicesList = new ConcurrentHashMap<String, BluetoothLeDevice>();
-
-        mDissapearingDevicesList = new ConcurrentHashMap<String, BluetoothLeDevice>();
-
-        mNumberOfScans = 0;
-    }
-
-    public BluetoothLeDevice getBluetoothLeDeviceForAddress(String address) {
-
-        for (BluetoothLeDevice device : mDeviceMap.values()) {
+        for (final BluetoothLeDevice device : mDeviceMap.values()) {
             if (device.getAddress().equals(address)) {
                 return device;
             }
@@ -95,9 +73,9 @@ public class Singleton {
     /**
      * Receives a Device Map and allocates the devices to the appropriate Singleton Device Map
      *
-     * @param inputDeviceMap String (ID) - BluetooLeDevice Map
+     * @param inputDeviceMap String (ID) - BluetoothLeDevice Map
      */
-    public void pruneDeviceList(Map<String, BluetoothLeDevice> inputDeviceMap) {
+    public void pruneDeviceList(final Map<String, BluetoothLeDevice> inputDeviceMap) {
 
         reportMapContents();
 
@@ -105,16 +83,16 @@ public class Singleton {
         mNewDevicesList.clear();
         mMovingFartherDevicesList.clear();
         mMovingCloserDevicesList.clear();
-        mDissapearingDevicesList.clear();
+        mDisappearingDevicesList.clear();
 
-        for (BluetoothLeDevice originalDevice : mDeviceMap.values()) {
+        for (final BluetoothLeDevice originalDevice : mDeviceMap.values()) {
             if (!inputDeviceMap.containsKey(originalDevice.getAddress())) {
                 Logger.d(TAG, "Device disappeared : " + originalDevice.getAddress());
-                mDissapearingDevicesList.put(originalDevice.getAddress(), originalDevice);
+                mDisappearingDevicesList.put(originalDevice.getAddress(), originalDevice);
             }
         }
 
-        for (BluetoothLeDevice updatedDevice : inputDeviceMap.values()) {
+        for (final BluetoothLeDevice updatedDevice : inputDeviceMap.values()) {
             mAvailableDevicesList.put(updatedDevice.getAddress(), updatedDevice);
 
             if (mDeviceMap.containsKey(updatedDevice.getAddress())) {
@@ -123,7 +101,7 @@ public class Singleton {
                 Logger.d(TAG, "Device : " + updatedDevice.getAddress());
                 Logger.d(TAG, "With average RSSI : " + updatedDevice.getRunningAverageRssi());
 
-                BluetoothLeDevice originalDevice = mDeviceMap.get(updatedDevice.getAddress());
+                final BluetoothLeDevice originalDevice = mDeviceMap.get(updatedDevice.getAddress());
 
                 if (updatedDevice.getRunningAverageRssi() <= originalDevice.getRunningAverageRssi()) {
                     mMovingCloserDevicesList.put(updatedDevice.getAddress(), updatedDevice);
@@ -146,34 +124,6 @@ public class Singleton {
     }
 
     /**
-     * Logs the contents of the device hash maps (for debugging purposes)
-     */
-    private void reportMapContents() {
-        Logger.d(TAG, "***Reporting updated devices");
-        Logger.d(TAG, "Total devices in memory : " + mDeviceMap.size());
-        for (BluetoothLeDevice originaldevice : mDeviceMap.values()) {
-            Logger.d(TAG, "Device : " + originaldevice.getAddress());
-            Logger.d(TAG, "With average RSSI : " + originaldevice.getRunningAverageRssi());
-
-            try {
-                Logger.d(TAG, "With Accuracy : " + new IBeaconDevice(originaldevice).getAccuracy());
-            } catch (Exception e) {
-                Logger.e(TAG, "Failed to cast IBeacon " + originaldevice.getAddress() + " " + e.getLocalizedMessage());
-            }
-
-        }
-        Logger.d(TAG, "Total devices in memory : " + mDeviceMap.size());
-        Logger.d(TAG, "Number of available devices on the last scan : " + mAvailableDevicesList.size());
-        Logger.d(TAG, "Number of updated devices on the last scan : " + mUpdatedDevicesList.size());
-        Logger.d(TAG, "Number of new devices on the last scan : " + mNewDevicesList.size());
-        Logger.d(TAG, "Number of devices moving nearer : " + mMovingCloserDevicesList.size());
-        Logger.d(TAG, "Number of devices moving farther away : " + mMovingFartherDevicesList.size());
-        Logger.d(TAG, "Number of devices that disappeared : " + mDissapearingDevicesList.size());
-
-
-    }
-
-    /**
      * @return The time in milliseconds of the last time the singleton was updated
      */
     public long getTimeOfLastUpdate() {
@@ -188,99 +138,117 @@ public class Singleton {
     }
 
     public int getAvailableDeviceListSize() {
-        if (mAvailableDevicesList != null) {
-            return mAvailableDevicesList.size();
-        } else {
-            return 0;
-        }
+        return mAvailableDevicesList.size();
     }
 
     public int getNewDeviceListSize() {
-        if (mNewDevicesList != null) {
-            return mNewDevicesList.size();
-        } else {
-            return 0;
-        }
+        return mNewDevicesList.size();
     }
 
     public int getUpdatedDeviceListSize() {
-        if (mUpdatedDevicesList != null) {
-            return mUpdatedDevicesList.size();
-        } else {
-            return 0;
-        }
+        return mUpdatedDevicesList.size();
     }
 
     public int getMovingCloserDeviceListSize() {
-        if (mMovingCloserDevicesList != null) {
-            return mMovingCloserDevicesList.size();
-        } else {
-            return 0;
-        }
+        return mMovingCloserDevicesList.size();
     }
 
     public int getMovingFartherDeviceListSize() {
-        if (mMovingFartherDevicesList != null) {
-            return mMovingFartherDevicesList.size();
-        } else {
-            return 0;
-        }
+        return mMovingFartherDevicesList.size();
     }
 
-    public int getDissappearingDeviceListSize() {
-        if (mDissapearingDevicesList != null) {
-            return mDissapearingDevicesList.size();
-        } else {
-            return 0;
-        }
+    public int getDisappearingDeviceListSize() {
+        return mDisappearingDevicesList.size();
     }
 
     public List<String> getDevicesAvailableAsStringList() {
-        List<String> list = new ArrayList<String>();
-        for (BluetoothLeDevice device : mAvailableDevicesList.values()) {
+        final List<String> list = new ArrayList<>();
+        for (final BluetoothLeDevice device : mAvailableDevicesList.values()) {
             list.add(device.getAddress());
         }
         return list;
     }
 
     public List<String> getDevicesNewAsStringList() {
-        List<String> list = new ArrayList<String>();
-        for (BluetoothLeDevice device : mNewDevicesList.values()) {
+        final List<String> list = new ArrayList<>();
+        for (final BluetoothLeDevice device : mNewDevicesList.values()) {
             list.add(device.getAddress());
         }
         return list;
     }
 
     public List<String> getDevicesUpdatedAsStringList() {
-        List<String> list = new ArrayList<String>();
-        for (BluetoothLeDevice device : mUpdatedDevicesList.values()) {
+        final List<String> list = new ArrayList<>();
+        for (final BluetoothLeDevice device : mUpdatedDevicesList.values()) {
             list.add(device.getAddress());
         }
         return list;
     }
 
     public List<String> getDevicesMovingCloserAsStringList() {
-        List<String> list = new ArrayList<String>();
-        for (BluetoothLeDevice device : mMovingCloserDevicesList.values()) {
+        final List<String> list = new ArrayList<>();
+        for (final BluetoothLeDevice device : mMovingCloserDevicesList.values()) {
             list.add(device.getAddress());
         }
         return list;
     }
 
     public List<String> getDevicesMovingFartherAsStringList() {
-        List<String> list = new ArrayList<String>();
-        for (BluetoothLeDevice device : mMovingFartherDevicesList.values()) {
+        final List<String> list = new ArrayList<>();
+        for (final BluetoothLeDevice device : mMovingFartherDevicesList.values()) {
             list.add(device.getAddress());
         }
         return list;
     }
 
-    public List<String> getDevicesDissappearingAsStringList() {
-        List<String> list = new ArrayList<String>();
-        for (BluetoothLeDevice device : mDissapearingDevicesList.values()) {
+    public List<String> getDevicesDisappearingAsStringList() {
+        final List<String> list = new ArrayList<>();
+        for (final BluetoothLeDevice device : mDisappearingDevicesList.values()) {
             list.add(device.getAddress());
         }
         return list;
+    }
+
+    /**
+     * Logs the contents of the device hash maps (for debugging purposes)
+     */
+    private void reportMapContents() {
+        Logger.d(TAG, "***Reporting updated devices");
+        Logger.d(TAG, "Total devices in memory : " + mDeviceMap.size());
+        for (final BluetoothLeDevice originaldevice : mDeviceMap.values()) {
+            Logger.d(TAG, "Device : " + originaldevice.getAddress());
+            Logger.d(TAG, "With average RSSI : " + originaldevice.getRunningAverageRssi());
+
+            try {
+                Logger.d(TAG, "With Accuracy : " + new IBeaconDevice(originaldevice).getAccuracy());
+            } catch (final Exception e) {
+                Logger.e(TAG, "Failed to cast IBeacon " + originaldevice.getAddress() + " " + e.getLocalizedMessage());
+            }
+
+        }
+        Logger.d(TAG, "Total devices in memory : " + mDeviceMap.size());
+        Logger.d(TAG, "Number of available devices on the last scan : " + mAvailableDevicesList.size());
+        Logger.d(TAG, "Number of updated devices on the last scan : " + mUpdatedDevicesList.size());
+        Logger.d(TAG, "Number of new devices on the last scan : " + mNewDevicesList.size());
+        Logger.d(TAG, "Number of devices moving nearer : " + mMovingCloserDevicesList.size());
+        Logger.d(TAG, "Number of devices moving farther away : " + mMovingFartherDevicesList.size());
+        Logger.d(TAG, "Number of devices that disappeared : " + mDisappearingDevicesList.size());
+
+
+    }
+
+    /**
+     * @return Instance of the Singleton
+     */
+    public static Singleton getInstance() {
+        if (sInstance == null) {
+            synchronized (Singleton.class) {
+                if (sInstance == null) {
+                    sInstance = new Singleton();
+                }
+            }
+        }
+        return sInstance;
     }
 
 }

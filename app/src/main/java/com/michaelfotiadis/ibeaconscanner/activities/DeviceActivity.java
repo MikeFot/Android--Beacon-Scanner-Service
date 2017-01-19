@@ -22,52 +22,50 @@ import uk.co.alt236.bluetoothlelib.resolvers.CompanyIdentifierResolver;
 
 public class DeviceActivity extends ListActivity {
 
-    private BluetoothLeDevice mDevice;
-
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mDevice = getIntent().getParcelableExtra(CustomConstants.Payloads.PAYLOAD_1.toString());
+        final BluetoothLeDevice device = getIntent().getParcelableExtra(CustomConstants.Payloads.PAYLOAD_1.toString());
 
-        populateDetails(mDevice);
+        populateDetails(device);
     }
 
     @SuppressLint("InflateParams")
-    private void appendDeviceInfo(MergeAdapter adapter, BluetoothLeDevice device) {
-        final LinearLayout lt = (LinearLayout) getLayoutInflater().inflate(R.layout.list_item_view_device_info, null);
-        final TextView tvName = (TextView) lt.findViewById(R.id.deviceName);
-        final TextView tvAddress = (TextView) lt.findViewById(R.id.deviceAddress);
+    private void appendDeviceInfo(final MergeAdapter adapter, final BluetoothLeDevice device) {
+        final LinearLayout layout = (LinearLayout) getLayoutInflater().inflate(R.layout.list_item_view_device_info, null);
+        final TextView textViewName = (TextView) layout.findViewById(R.id.deviceName);
+        final TextView textViewAddress = (TextView) layout.findViewById(R.id.deviceAddress);
 
-        tvName.setText(device.getName());
-        tvAddress.setText(device.getAddress());
+        textViewName.setText(device.getName());
+        textViewAddress.setText(device.getAddress());
 
-        adapter.addView(lt);
+        adapter.addView(layout);
     }
 
     /**
      * Append a header to the MergeAdapter
      *
-     * @param adapter
-     * @param title
+     * @param adapter {@link MergeAdapter} to be used
+     * @param title String title to be appended
      */
     @SuppressLint("InflateParams")
-    private void appendHeader(MergeAdapter adapter, String title) {
-        final LinearLayout lt = (LinearLayout) getLayoutInflater().inflate(R.layout.list_item_view_header, null);
-        final TextView tvTitle = (TextView) lt.findViewById(R.id.title);
-        tvTitle.setText(title);
+    private void appendHeader(final MergeAdapter adapter, final String title) {
+        final LinearLayout layout = (LinearLayout) getLayoutInflater().inflate(R.layout.list_item_view_header, null);
+        final TextView textViewTitle = (TextView) layout.findViewById(R.id.title);
+        textViewTitle.setText(title);
 
-        adapter.addView(lt);
+        adapter.addView(layout);
     }
 
     /**
      * Append body text to the MergeAdapter
      *
-     * @param adapter
-     * @param data
+     * @param adapter {@link MergeAdapter} to be used
+     * @param data String text to be appended
      */
     @SuppressLint("InflateParams")
-    private void appendSimpleText(MergeAdapter adapter, String data) {
+    private void appendSimpleText(final MergeAdapter adapter, final String data) {
         final LinearLayout lt = (LinearLayout) getLayoutInflater().inflate(R.layout.list_item_view_textview, null);
         final TextView tvData = (TextView) lt.findViewById(R.id.data);
 
@@ -77,7 +75,7 @@ public class DeviceActivity extends ListActivity {
     }
 
     @SuppressLint("InflateParams")
-    private void appendIBeaconInfo(MergeAdapter adapter, IBeaconManufacturerData iBeaconData) {
+    private void appendIBeaconInfo(final MergeAdapter adapter, final IBeaconManufacturerData iBeaconData) {
         final LinearLayout lt = (LinearLayout) getLayoutInflater().inflate(R.layout.list_item_view_ibeacon_details, null);
         final TextView tvCompanyId = (TextView) lt.findViewById(R.id.companyId);
         final TextView tvUUID = (TextView) lt.findViewById(R.id.uuid);
@@ -97,7 +95,7 @@ public class DeviceActivity extends ListActivity {
     }
 
     @SuppressLint("InflateParams")
-    private void appendRssiInfo(MergeAdapter adapter, BluetoothLeDevice device) {
+    private void appendRssiInfo(final MergeAdapter adapter, final BluetoothLeDevice device) {
         final LinearLayout lt = (LinearLayout) getLayoutInflater().inflate(R.layout.list_item_view_rssi_info, null);
         final TextView tvLastTimestamp = (TextView) lt.findViewById(R.id.lastTimestamp);
         final TextView tvLastRssi = (TextView) lt.findViewById(R.id.lastRssi);
@@ -108,11 +106,11 @@ public class DeviceActivity extends ListActivity {
         adapter.addView(lt);
     }
 
-    private String formatRssi(int rssi) {
+    private String formatRssi(final int rssi) {
         return getString(R.string.formatter_db, String.valueOf(rssi));
     }
 
-    private void populateDetails(BluetoothLeDevice device) {
+    private void populateDetails(final BluetoothLeDevice device) {
         final MergeAdapter adapter = new MergeAdapter();
 
         if (device == null) {
@@ -135,11 +133,11 @@ public class DeviceActivity extends ListActivity {
         getListView().setAdapter(adapter);
     }
 
-    private static String formatTime(long time) {
+    private static String formatTime(final long time) {
         return TimeFormatter.getIsoDateTime(time);
     }
 
-    private static String hexEncode(int integer) {
+    private static String hexEncode(final int integer) {
         return "0x" + Integer.toHexString(integer).toUpperCase(Locale.US);
     }
 
