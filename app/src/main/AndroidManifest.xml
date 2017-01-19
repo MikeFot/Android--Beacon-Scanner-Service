@@ -36,6 +36,11 @@
             android:parentActivityName=".activities.MainActivity" 
             android:label="@string/title_activity_scan_preferences" >
         </activity>
+
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="d936fe3caf46a1a4ffc49339b09d733af6a6b6b5" />
     </application>
 
+    <uses-permission android:name="android.permission.INTERNET" />
 </manifest>

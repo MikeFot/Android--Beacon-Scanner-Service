@@ -2,7 +2,10 @@ package com.michaelfotiadis.ibeaconscanner;
 
 import android.app.Application;
 
+import com.crashlytics.android.Crashlytics;
 import com.michaelfotiadis.ibeaconscanner.utils.Logger;
+
+import io.fabric.sdk.android.Fabric;
 
 public class MyApplication extends Application {
 
@@ -13,6 +16,7 @@ public class MyApplication extends Application {
 	public void onCreate() {
 		Logger.d(TAG, "Starting Application");
 		super.onCreate();
+		Fabric.with(this, new Crashlytics());
 	}
 
 }
