@@ -6,8 +6,10 @@ Sample Service App for Bluetooth LE Scanner
 - The Service will then reschedule itself for future runs and will unregister once the maximum number of runs have been reached or the application is paused through the MainActivity's onPause() method.
 
 ##Dependencies
+
 This is intended to be used in conjunction with alt236's "Bluetooth LE Library for Android" library project which can be found here:
 https://github.com/alt236/Bluetooth-LE-Library---Android
+
 It also utilises John Persnano's SuperToasts, found here:
 https://github.com/JohnPersano/SuperToasts
 
