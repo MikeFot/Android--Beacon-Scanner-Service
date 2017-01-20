@@ -18,6 +18,6 @@ Android devices running OS version 18+ and which can support receiving of Blueto
 The Main Activity is currently providing a simple visualisation of results.
 
 ##Play Store Project
-https://play.google.com/store/apps/details?id=com.michaelfotiadis.ibeaconscanner
+[![Get it on Google Play](http://www.android.com/images/brand/get_it_on_play_logo_small.png)](https://play.google.com/store/apps/details?id=com.michaelfotiadis.ibeaconscanner)
 
 The code in this project is licensed under the Apache Software License 2.0.
