@@ -19,7 +19,7 @@ final def STRING = "string"
 final def BOOLEAN = "boolean"
 final def INT = "int"
 
-final String appCompatLibVersion = "25.0.1"
+final String appCompatLibVersion = "25.1.0"
 
 
 
