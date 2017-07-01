@@ -19,10 +19,11 @@ Android devices running OS version 18+ and which can support receiving of Blueto
 ## Usage
 The Main Activity is currently providing a simple visualisation of results.
 
-## Play Store Project
-[![Get it on Google Play](http://www.android.com/images/brand/get_it_on_play_logo_small.png)](https://play.google.com/store/apps/details?id=com.michaelfotiadis.ibeaconscanner)
+## Play Store Page
 
-##Screenshots
+<a href='https://play.google.com/store/apps/details?id=com.michaelfotiadis.ibeaconscanner&pcampaignid=MKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_gb/badges/images/generic/en_badge_web_generic.png'/></a>
+
+## Screenshots
 
 ![Screenshot 1](/screenshots/Screenshot_1.png?raw=true)
 
